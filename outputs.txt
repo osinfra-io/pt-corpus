@@ -1,0 +1,40 @@
+teams = {
+  "pt-corpus" = {
+    "display_name" = "Corpus"
+    "environments" = {
+      "Non-Production" = "folders/838812118695"
+      "Production" = "folders/365061563816"
+      "Sandbox" = "folders/565680085395"
+    }
+    "github_repositories" = {
+      "pt-corpus" = {
+        "full_name" = "osinfra-io/pt-corpus"
+        "html_url" = "https://github.com/osinfra-io/pt-corpus"
+        "name" = "pt-corpus"
+      }
+    }
+    "identity_groups" = {
+      "admin" = {
+        "description" = "All of the permissions in the Writer role, plus permissions for actions like the following: Completing sensitive tasks, like managing tag bindings for Compute Engine resources; Managing roles and permissions for a project and all resources within the project; Setting up billing for a project."
+        "display_name" = "Platform Team: Corpus Administrators"
+        "email" = "pt-corpus-administrators@osinfra.io"
+        "role" = "admin"
+      }
+      "reader" = {
+        "description" = "Permissions for read-only actions that don't affect state, such as viewing (but not modifying) existing resources or data."
+        "display_name" = "Platform Team: Corpus Readers"
+        "email" = "pt-corpus-readers@osinfra.io"
+        "role" = "reader"
+      }
+      "writer" = {
+        "description" = "All of the permissions in the Reader role, plus permissions for actions that modify state, such as changing existing resources."
+        "display_name" = "Platform Team: Corpus Writers"
+        "email" = "pt-corpus-writers@osinfra.io"
+        "role" = "writer"
+      }
+    }
+    "team_folder_id" = "folders/1039628061071"
+    "team_type" = "platform-team"
+    "team_type_folder_id" = "831575438843"
+  }
+}
