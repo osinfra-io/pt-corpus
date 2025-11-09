@@ -36,16 +36,6 @@ variable "project_billing_account" {
   type        = string
 }
 
-variable "project_cis_2_2_logging_sink_project_id" {
-  description = "The CIS 2.2 logging sink benchmark project ID"
-  type        = string
-}
-
-variable "project_folder_id" {
-  description = "The numeric ID of the folder this project should be created under"
-  type        = string
-}
-
 variable "project_monthly_budget_amount" {
   default     = 5
   description = "The monthly budget amount in USD to set for the project"
