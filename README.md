@@ -13,6 +13,8 @@ The infrastructure automates the creation of:
 - **Google Cloud Project** with CIS compliance features, budget controls, and required APIs
 - **Datadog Integration** with Cloud Security Posture Management (CSPM) and Security Command Center
 - **Team Infrastructure** using the logos foundational platform for consistent labeling and governance
+- **GitHub Actions Integration** with service accounts, workload identity, and state storage buckets
+- **KMS Encryption** for secure state file encryption and key management
 - **Multi-environment Support** with sandbox, non-production, and production configurations
 
 This establishes team-specific infrastructure while maintaining consistency with organizational standards and foundational platform practices.
@@ -54,9 +56,10 @@ The infrastructure creates:
 - **Google Cloud Project** with standardized naming, CIS compliance logging, budget controls, and required APIs
 - **Datadog Integration** with Cloud Security Posture Management (CSPM) and Security Command Center integration
 - **Team Infrastructure** leveraging logos foundational platform for consistent labeling, environment detection, and governance
-- **Multi-environment Support** with configurations for sandbox, non-production, and production deployments
-
-## Interface
+- **GitHub Actions Infrastructure** including service accounts, workload identity pools, and secure authentication
+- **State Storage** with encrypted GCS buckets and KMS keys for secure OpenTofu state management
+- **Access Controls** with team-based service accounts and repository-specific workload identity bindings
+- **Multi-environment Support** with configurations for sandbox, non-production, and production deployments## Interface
 
 ### Environment-Specific Configurations
 
@@ -73,7 +76,6 @@ The following variables must be provided for deployment:
 - **`billing_project`** - The quota project for user_project_override
 - **`project_cis_2_2_logging_sink_project_id`** - The CIS 2.2 logging sink benchmark project ID
 - **`project_folder_id`** - The numeric ID of the folder where the project should be created
-- **`workload_identity_pool_name`** - The workload identity pool name for authentication
 
 ### Optional Variables
 
@@ -103,6 +105,14 @@ The Google Cloud project ID for use in downstream resource creation.
 
 The Google Cloud project number for use in IAM bindings and other resources requiring the numeric project identifier.
 
+### `service_accounts`
+
+GitHub Actions service accounts created for each team with repositories, including email addresses, names, and unique IDs for downstream authentication and access control.
+
+### `storage_buckets`
+
+Encrypted GCS buckets created for OpenTofu state storage, with bucket names and URLs for each team's infrastructure automation.
+
 ### `teams`
 
 Complete team infrastructure information from the logos foundational platform including:
@@ -111,9 +121,15 @@ Complete team infrastructure information from the logos foundational platform in
 - Folder hierarchy (team type folder, team folder ID, environment folder IDs)
 - Identity groups with email addresses, display names, descriptions, and roles
 
-These outputs provide downstream repositories with foundational infrastructure information for consistent resource deployment and access control management.
+### `workload_identity_pools`
 
-## Module Dependencies
+Workload Identity Pools created for secure external authentication, providing pool names and IDs for GitHub Actions integration.
+
+### `workload_identity_providers`
+
+Workload Identity Pool Providers configured for OIDC authentication with GitHub Actions, including provider names and IDs.
+
+These outputs provide downstream repositories with comprehensive infrastructure information for consistent resource deployment, secure authentication, and access control management.## Module Dependencies
 
 This configuration leverages the following infrastructure modules:
 
@@ -158,3 +174,10 @@ Provides foundational platform capabilities:
 - Environment configurations must align with logos foundational platform
 - Team naming must follow organizational standards
 - Resource labeling must be consistent across environments
+
+### GitHub Actions Integration
+
+- Service accounts are created only for teams with configured repositories
+- Workload identity pools enforce organization-specific restrictions
+- Repository access is limited to configured GitHub repositories per team
+- KMS encryption keys are shared across all team service accounts for cost efficiency

@@ -50,8 +50,8 @@ module "project" {
 # https://github.com/osinfra-io/opentofu-google-storage-bucket
 
 module "state_storage_bucket" {
-  source   = "github.com/osinfra-io/opentofu-google-storage-bucket?ref=642c3eb45623e0e619dcc3c80c98ef804da7c153" # v0.2.1
   for_each = local.service_accounts
+  source   = "github.com/osinfra-io/opentofu-google-storage-bucket?ref=642c3eb45623e0e619dcc3c80c98ef804da7c153" # v0.2.1
 
   labels   = module.helpers.labels
   location = "us"
@@ -64,6 +64,10 @@ module "state_storage_bucket" {
 
 resource "google_cloud_identity_group_membership" "github_actions" {
   for_each = local.service_accounts
+
+  depends_on = [
+    module.project
+  ]
 
   # Use the following gcloud command to figure out the group_id
   # gcloud identity groups search --organization=osinfra.io --labels="cloudidentity.googleapis.com/groups.discussion_forum"
@@ -85,21 +89,12 @@ resource "google_cloud_identity_group_membership" "github_actions" {
       name = "MANAGER"
     }
   }
-
-  depends_on = [
-    module.project
-  ]
 }
 
 # Google KMS Crypto Key Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key
 
 resource "google_kms_crypto_key" "state_encryption" {
-  name            = "default"
-  key_ring        = google_kms_key_ring.state_encryption.id
-  labels          = module.helpers.labels
-  rotation_period = "7776000s"
-
   # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
 
   # CryptoKeys cannot be deleted from Google Cloud Platform. Destroying a OpenTofu-managed CryptoKey will
@@ -111,6 +106,11 @@ resource "google_kms_crypto_key" "state_encryption" {
   # lifecycle {
   #   prevent_destroy = true
   # }
+
+  key_ring        = google_kms_key_ring.state_encryption.id
+  labels          = module.helpers.labels
+  name            = "default"
+  rotation_period = "7776000s"
 }
 
 
@@ -120,26 +120,22 @@ resource "google_kms_crypto_key" "state_encryption" {
 # BUG: https://github.com/hashicorp/terraform-provider-google/issues/7611
 resource "google_kms_crypto_key_iam_member" "cloud_storage_service_account" {
   crypto_key_id = google_kms_crypto_key.state_encryption.id
-  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:service-${module.project.number}@gs-project-accounts.iam.gserviceaccount.com"
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 }
 
 resource "google_kms_crypto_key_iam_member" "github_actions" {
   for_each = local.service_accounts
 
   crypto_key_id = google_kms_crypto_key.state_encryption.id
-  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 }
 
 # Google KMS Key Ring Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_key_ring
 
 resource "google_kms_key_ring" "state_encryption" {
-  name     = "state-encryption"
-  location = "us"
-  project  = module.project.id
-
   # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
 
   # KeyRings cannot be deleted from Google Cloud Platform. Destroying a OpenTofu-managed KeyRing will remove it from
@@ -148,6 +144,10 @@ resource "google_kms_key_ring" "state_encryption" {
   # lifecycle {
   #   prevent_destroy = true
   # }
+
+  location = "us"
+  name     = "state-encryption"
+  project  = module.project.id
 }
 
 # Google Service Account Resource
@@ -167,7 +167,7 @@ resource "google_service_account" "github_actions" {
 resource "google_service_account_iam_member" "github_actions" {
   for_each = local.github_repositories
 
-  member             = "principalSet://iam.googleapis.com/${var.workload_identity_pool_name}/attribute.repository/osinfra-io/${each.value.repository}"
+  member             = "principalSet://iam.googleapis.com/projects/${module.project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.this["github-actions"].workload_identity_pool_id}/attribute.repository/osinfra-io/${each.value.repository}"
   role               = "roles/iam.workloadIdentityUser"
   service_account_id = google_service_account.github_actions[each.value.name].id
 }

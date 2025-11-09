@@ -38,3 +38,25 @@ output "teams" {
   description = "All teams data from logos workspaces"
   value       = module.helpers.teams
 }
+
+output "workload_identity_pools" {
+  description = "Workload Identity Pools created for external authentication"
+  value = {
+    for key, pool in google_iam_workload_identity_pool.this :
+    key => {
+      name                      = pool.name
+      workload_identity_pool_id = pool.workload_identity_pool_id
+    }
+  }
+}
+
+output "workload_identity_providers" {
+  description = "Workload Identity Pool Providers created for OIDC authentication"
+  value = {
+    for key, provider in google_iam_workload_identity_pool_provider.this :
+    key => {
+      name                               = provider.name
+      workload_identity_pool_provider_id = provider.workload_identity_pool_provider_id
+    }
+  }
+}
