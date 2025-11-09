@@ -10,3 +10,8 @@ output "project_number" {
   description = "The project number"
   value       = module.project.number
 }
+
+output "teams" {
+  description = "All teams data from logos workspaces"
+  value       = module.helpers.teams
+}

@@ -11,10 +11,5 @@ module "helpers" {
   team                = "pt-corpus"
 
   # Logos functionality - consolidated into core-helpers
-  logos_remote_state_config = {
-    backend = "local"
-    config = {
-      path = "../pt-logos/terraform.tfstate.d/corpus-main-production/terraform.tfstate"
-    }
-  }
+  logos_workspaces = ["corpus-main-production", "logos-main-production"]
 }
