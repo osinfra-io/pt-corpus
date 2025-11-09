@@ -19,14 +19,13 @@ module "project" {
   source = "../opentofu-google-project"
   # source = "github.com/osinfra-io/opentofu-google-project?ref=655916e58848e16af406e4968b25bb77fb0f1119" # v0.4.5
 
-  billing_account                 = var.project_billing_account
-  cis_2_2_logging_sink_project_id = var.project_cis_2_2_logging_sink_project_id
-  deletion_policy                 = "DELETE"
-  description                     = module.helpers.project_naming.description
-  folder_id                       = module.helpers.environment_folder_id
-  labels                          = module.helpers.labels
-  monthly_budget_amount           = var.project_monthly_budget_amount
-  prefix                          = module.helpers.project_naming.prefix
+  billing_account       = var.project_billing_account
+  deletion_policy       = "DELETE"
+  description           = module.helpers.project_naming.description
+  folder_id             = module.helpers.environment_folder_id
+  labels                = module.helpers.labels
+  monthly_budget_amount = var.project_monthly_budget_amount
+  prefix                = module.helpers.project_naming.prefix
 
   services = [
     "billingbudgets.googleapis.com",
@@ -44,4 +43,141 @@ module "project" {
     "servicenetworking.googleapis.com",
     "serviceusage.googleapis.com"
   ]
+}
+
+# Google Storage Bucket Module (osinfra.io)
+# https://github.com/osinfra-io/opentofu-google-storage-bucket
+
+module "state_storage_bucket" {
+  source   = "github.com/osinfra-io/opentofu-google-storage-bucket?ref=642c3eb45623e0e619dcc3c80c98ef804da7c153" # v0.2.1
+  for_each = local.service_accounts
+
+  labels   = module.helpers.labels
+  location = "us"
+  name     = "${each.key}-state-${module.helpers.env}"
+  project  = module.project.id
+}
+
+# Google Identity Group Membership
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/cloud_identity_group_membership
+
+resource "google_cloud_identity_group_membership" "github_actions" {
+  for_each = local.service_accounts
+
+  # Use the following gcloud command to figure out the group_id
+  # gcloud identity groups search --organization=osinfra.io --labels="cloudidentity.googleapis.com/groups.discussion_forum"
+
+  # This should be the group_id for the gcp-billing-users group created in the google-cloud-hierarchy repository.
+
+  group = "groups/${var.billing_users_group_id}"
+
+  preferred_member_key {
+    id = google_service_account.github_actions[each.key].email
+  }
+
+  roles { name = "MEMBER" }
+
+  dynamic "roles" {
+    for_each = each.key == "plt-lz-backend" ? [1] : []
+
+    content {
+      name = "MANAGER"
+    }
+  }
+
+  depends_on = [
+    module.project
+  ]
+}
+
+# Google KMS Crypto Key Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key
+
+resource "google_kms_crypto_key" "state_encryption" {
+  name            = "default"
+  key_ring        = google_kms_key_ring.state_encryption.id
+  labels          = module.helpers.labels
+  rotation_period = "7776000s"
+
+  # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
+
+  # CryptoKeys cannot be deleted from Google Cloud Platform. Destroying a OpenTofu-managed CryptoKey will
+  # remove it from state and delete all CryptoKeyVersions, rendering the key unusable, but will not delete
+  # the resource from the project. When OpenTofu destroys these keys, any data previously encrypted with
+  # these keys will be irrecoverable. For this reason, it is strongly recommended that you add lifecycle
+  # hooks to the resource to prevent accidental destruction.
+
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
+}
+
+
+# Google KMS Crypto Key IAM Member
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key_iam_member
+
+# BUG: https://github.com/hashicorp/terraform-provider-google/issues/7611
+resource "google_kms_crypto_key_iam_member" "cloud_storage_service_account" {
+  crypto_key_id = google_kms_crypto_key.state_encryption.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = "serviceAccount:service-${module.project.number}@gs-project-accounts.iam.gserviceaccount.com"
+}
+
+resource "google_kms_crypto_key_iam_member" "github_actions" {
+  for_each = local.service_accounts
+
+  crypto_key_id = google_kms_crypto_key.state_encryption.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+}
+
+# Google KMS Key Ring Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_key_ring
+
+resource "google_kms_key_ring" "state_encryption" {
+  name     = "state-encryption"
+  location = "us"
+  project  = module.project.id
+
+  # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
+
+  # KeyRings cannot be deleted from Google Cloud Platform. Destroying a OpenTofu-managed KeyRing will remove it from
+  # state but will not delete the resource from the project.
+
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
+}
+
+# Google Service Account Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_service_account
+
+resource "google_service_account" "github_actions" {
+  for_each = local.service_accounts
+
+  account_id   = "${each.key}-github"
+  display_name = "Service account for GitHub Actions"
+  project      = module.project.id
+}
+
+# Google Service Account IAM Member Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_service_account_iam#google_service_account_iam_member
+
+resource "google_service_account_iam_member" "github_actions" {
+  for_each = local.github_repositories
+
+  member             = "principalSet://iam.googleapis.com/${var.workload_identity_pool_name}/attribute.repository/osinfra-io/${each.value.repository}"
+  role               = "roles/iam.workloadIdentityUser"
+  service_account_id = google_service_account.github_actions[each.value.name].id
+}
+
+# Google Storage Bucket IAM Member
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/storage_bucket_iam#google_storage_bucket_iam_member
+
+resource "google_storage_bucket_iam_member" "github_actions" {
+  for_each = local.service_accounts
+
+  bucket = module.state_storage_bucket[each.key].name
+  member = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  role   = "roles/storage.objectAdmin"
 }
