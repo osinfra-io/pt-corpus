@@ -2,10 +2,19 @@
 # https://github.com/osinfra-io/opentofu-core-helpers
 
 module "helpers" {
-  source = "github.com/osinfra-io/opentofu-core-helpers//root?ref=bf324af8c32babb9cb27ac194caefe3f36ce3f30" # v0.1.3
+  source = "../opentofu-core-helpers/root"
+  # source = "github.com/osinfra-io/opentofu-core-helpers//root?ref=bf324af8c32babb9cb27ac194caefe3f36ce3f30" # v0.1.3
 
   cost_center         = "x001"
   data_classification = "public"
   repository          = "pt-corpus"
-  team                = local.team_name
+  team                = "pt-corpus"
+
+  # Logos functionality - consolidated into core-helpers
+  logos_remote_state_config = {
+    backend = "local"
+    config = {
+      path = "../pt-logos/terraform.tfstate.d/corpus-main-production/terraform.tfstate"
+    }
+  }
 }
