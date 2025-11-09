@@ -2,8 +2,8 @@
 # https://github.com/osinfra-io/opentofu-datadog-google-integration
 
 module "datadog" {
-  source = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=e0f6e37034c7e8e3b69edaa100eb48d9d3f7f9e5" # v0.3.6
   count  = var.datadog_enable ? 1 : 0
+  source = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=e0f6e37034c7e8e3b69edaa100eb48d9d3f7f9e5" # v0.3.6
 
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true

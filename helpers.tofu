@@ -7,9 +7,10 @@ module "helpers" {
 
   cost_center         = "x001"
   data_classification = "public"
-  repository          = "pt-corpus"
-  team                = "pt-corpus"
 
   # Logos functionality - consolidated into core-helpers
   logos_workspaces = ["corpus-main-production", "logos-main-production"]
+
+  repository = "pt-corpus"
+  team       = "pt-corpus"
 }
