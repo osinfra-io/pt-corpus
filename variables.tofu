@@ -6,11 +6,7 @@ variable "billing_project" {
   type        = string
 }
 
-variable "billing_users_group_id" {
-  default     = "03dy6vkm4a7ag9g"
-  description = "The numeric ID of the billing users group"
-  type        = string
-}
+
 
 variable "datadog_api_key" {
   description = "Datadog API key"
@@ -28,6 +24,12 @@ variable "datadog_enable" {
   default     = false
   description = "Enable Datadog integration"
   type        = bool
+}
+
+variable "google_customer_id" {
+  description = "The unique customer ID assigned to you when you signed up for Google Workspace or Cloud Identity. You can look up this ID in your Admin console"
+  type        = string
+  default     = "C01hd34v8"
 }
 
 variable "project_billing_account" {

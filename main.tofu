@@ -59,6 +59,24 @@ module "state_storage_bucket" {
   project  = module.project.id
 }
 
+# Google Cloud Identity Group Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/cloud_identity_group
+
+resource "google_cloud_identity_group" "billing_users" {
+  display_name = "Platform Team: Corpus Billing Users"
+
+  group_key {
+    id = "pt-corpus-billing-users@osinfra.io"
+  }
+
+  labels = {
+    # Required labels for groups
+    "cloudidentity.googleapis.com/groups.discussion_forum" = ""
+  }
+
+  parent = "customers/${var.google_customer_id}"
+}
+
 # Google Identity Group Membership
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/cloud_identity_group_membership
 
@@ -69,12 +87,7 @@ resource "google_cloud_identity_group_membership" "github_actions" {
     module.project
   ]
 
-  # Use the following gcloud command to figure out the group_id
-  # gcloud identity groups search --organization=osinfra.io --labels="cloudidentity.googleapis.com/groups.discussion_forum"
-
-  # This should be the group_id for the gcp-billing-users group created in the google-cloud-hierarchy repository.
-
-  group = "groups/${var.billing_users_group_id}"
+  group = google_cloud_identity_group.billing_users.name
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
