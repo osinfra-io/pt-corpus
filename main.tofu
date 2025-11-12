@@ -59,6 +59,15 @@ module "state_storage_bucket" {
   project  = module.project.id
 }
 
+# Google Billing Account IAM Member
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_billing_account_iam_member
+
+resource "google_billing_account_iam_member" "billing_users" {
+  billing_account_id = var.project_billing_account
+  member             = "group:${google_cloud_identity_group.billing_users.group_key[0].id}"
+  role               = "roles/billing.user"
+}
+
 # Google Cloud Identity Group Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/cloud_identity_group
 
