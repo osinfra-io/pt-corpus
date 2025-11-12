@@ -74,7 +74,7 @@ provider "datadog" {
 # Google Cloud Provider
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs
 
-provider "google" {
-  billing_project       = var.billing_project
-  user_project_override = true
-}
+# provider "google" {
+#   billing_project       = var.billing_project
+#   user_project_override = true
+# }

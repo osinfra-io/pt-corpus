@@ -1,10 +1,10 @@
 # Input Variables
 # https://opentofu.org/docs/language/values/variables
 
-variable "billing_project" {
-  description = "The quota project to send in `user_project_override`, used for all requests sent from the provider. If set on a resource that supports sending the resource project, this value will supersede the resource project. This field is ignored if `user_project_override` is set to false or unset"
-  type        = string
-}
+# variable "billing_project" {
+#   description = "The quota project to send in `user_project_override`, used for all requests sent from the provider. If set on a resource that supports sending the resource project, this value will supersede the resource project. This field is ignored if `user_project_override` is set to false or unset"
+#   type        = string
+# }
 
 variable "datadog_api_key" {
   description = "Datadog API key"
