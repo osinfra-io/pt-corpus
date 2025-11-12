@@ -25,7 +25,7 @@ jobs:
       github_environment: "Production: Main"
       service_account: pt-corpus-github@pt-corpus-tf16-prod.iam.gserviceaccount.com
       opentofu_kms_encryption_key: projects/pt-corpus-tf16-prod/locations/us/keyRings/state-encryption/cryptoKeys/default
-      opentofu_plan_args: -var-file=tfvars/production.tfvars
+      opentofu_plan_args: -var-file=environments/production.tfvars
       opentofu_state_bucket: pt-corpus-state-prod
       opentofu_version: ${{ vars.OPENTOFU_VERSION }}
       opentofu_workspace: main-production

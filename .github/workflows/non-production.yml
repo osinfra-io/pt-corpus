@@ -24,7 +24,7 @@ jobs:
       github_environment: "Non-Production: Main"
       service_account: pt-corpus-github@pt-corpus-tf61-nonprod.iam.gserviceaccount.com
       opentofu_kms_encryption_key: projects/pt-corpus-tf61-nonprod/locations/us/keyRings/state-encryption/cryptoKeys/default
-      opentofu_plan_args: -var-file=tfvars/non-production.tfvars
+      opentofu_plan_args: -var-file=environments/non-production.tfvars
       opentofu_state_bucket: pt-corpus-state-nonprod
       opentofu_version: ${{ vars.OPENTOFU_VERSION }}
       opentofu_workspace: main-non-production
