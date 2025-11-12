@@ -26,7 +26,7 @@ jobs:
       service_account: pt-corpus-github@pt-corpus-tf16-prod.iam.gserviceaccount.com
       opentofu_kms_encryption_key: projects/pt-corpus-tf16-prod/locations/us/keyRings/state-encryption/cryptoKeys/default
       opentofu_plan_args: -var-file=tfvars/production.tfvars
-      opentofu_state_bucket: pt-corpus-prod
+      opentofu_state_bucket: pt-corpus-state-prod
       opentofu_version: ${{ vars.OPENTOFU_VERSION }}
       opentofu_workspace: main-production
       workload_identity_provider: projects/557265520053/locations/global/workloadIdentityPools/github-actions/providers/github-actions-oidc
