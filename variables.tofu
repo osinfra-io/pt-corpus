@@ -6,8 +6,6 @@ variable "billing_project" {
   type        = string
 }
 
-
-
 variable "datadog_api_key" {
   description = "Datadog API key"
   sensitive   = true

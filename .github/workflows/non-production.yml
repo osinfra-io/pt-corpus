@@ -1,0 +1,35 @@
+name: Non-Production
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+
+# For reusable workflows, the permissions setting for id-token should be set to write at the
+# caller workflow level or in the specific job that calls the reusable workflow.
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  main:
+    name: "Main"
+    uses: osinfra-io/github-opentofu-gcp-called-workflows/.github/workflows/plan-and-apply.yml@e3c59e43f2458550c7f13b6369fb6978b6f42c6e # v0.2.9
+    with:
+      checkout_ref: ${{ github.ref }}
+      github_environment: "Non-Production: Main"
+      service_account: pt-corpus-github@pt-corpus-tf61-nonprod.iam.gserviceaccount.com
+      opentofu_kms_encryption_key: projects/pt-corpus-tf61-nonprod/locations/us/keyRings/state-encryption/cryptoKeys/default
+      opentofu_plan_args: -var-file=tfvars/non-production.tfvars
+      opentofu_state_bucket: pt-corpus-nonprod
+      opentofu_version: ${{ vars.OPENTOFU_VERSION }}
+      opentofu_workspace: main-non-production
+      workload_identity_provider: projects/640681940147/locations/global/workloadIdentityPools/github-actions/providers/github-actions-oidc
+    secrets:
+      opentofu_plan_secret_args: >-
+        -var=datadog_api_key=${{ secrets.DATADOG_API_KEY }}
+        -var=datadog_app_key=${{ secrets.DATADOG_APP_KEY }}
