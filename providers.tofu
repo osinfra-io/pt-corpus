@@ -6,36 +6,36 @@ terraform {
   # The commented out sections below demonstrate how to configure
   # fallback encryption methods for state and plan files for bootstrapping.
 
-  #   encryption {
-  #     # method "unencrypted" "migrate" {}
+  encryption {
+    method "unencrypted" "migrate" {}
 
-  #     key_provider "gcp_kms" "default" {
-  #       kms_encryption_key = var.state_kms_encryption_key
-  #       key_length         = 32
-  #     }
+    key_provider "gcp_kms" "default" {
+      kms_encryption_key = var.state_kms_encryption_key
+      key_length         = 32
+    }
 
-  #     method "aes_gcm" "default" {
-  #       keys = key_provider.gcp_kms.default
-  #     }
+    method "aes_gcm" "default" {
+      keys = key_provider.gcp_kms.default
+    }
 
-  #     plan {
-  #       method   = method.aes_gcm.default
-  #       enforced = true
+    plan {
+      method = method.aes_gcm.default
+      # enforced = true
 
-  #       # fallback {
-  #       #   method = method.unencrypted.migrate
-  #       # }
-  #     }
+      fallback {
+        method = method.unencrypted.migrate
+      }
+    }
 
-  #     state {
-  #       method   = method.aes_gcm.default
-  #       enforced = true
+    state {
+      method = method.aes_gcm.default
+      # enforced = true
 
-  #       # fallback {
-  #       #   method = method.unencrypted.migrate
-  #       # }
-  #     }
-  #   }
+      fallback {
+        method = method.unencrypted.migrate
+      }
+    }
+  }
 
 
   # Requiring Providers
