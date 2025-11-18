@@ -13,3 +13,9 @@ module "helpers" {
   repository = "pt-corpus"
   team       = "pt-corpus"
 }
+
+# Debug output for troubleshooting team lookup
+output "debug_team_lookup" {
+  description = "Debug: Team lookup information from helpers module"
+  value       = module.helpers.debug_team_lookup
+}
