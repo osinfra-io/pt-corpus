@@ -8,14 +8,8 @@ module "helpers" {
   data_classification = "public"
 
   # Logos functionality - consolidated into core-helpers
-  logos_workspaces = ["pt-corpus-main-production", "pt-logos-main-production"]
+  logos_workspaces = ["pt-Zcorpus-main-production", "pt-logos-main-production"]
 
   repository = "pt-corpus"
   team       = "pt-corpus"
-}
-
-# Debug output for troubleshooting team lookup
-output "debug_team_lookup" {
-  description = "Debug: Team lookup information from helpers module"
-  value       = module.helpers.debug_team_lookup
 }
