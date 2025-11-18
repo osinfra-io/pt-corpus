@@ -10,6 +10,7 @@ module "helpers" {
   # Logos functionality - consolidated into core-helpers
   logos_workspaces = ["pt-corpus-main-production", "pt-logos-main-production"]
 
-  repository = "pt-corpus"
-  team       = "pt-corpus"
+  repository               = "pt-corpus"
+  state_kms_encryption_key = var.state_kms_encryption_key
+  team                     = "pt-corpus"
 }
