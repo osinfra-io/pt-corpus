@@ -15,8 +15,9 @@ terraform {
     }
 
     key_provider "gcp_kms" "logos" {
-      kms_encryption_key = "projects/pt-corpus-tf16-prod/locations/us/keyRings/state-encryption/cryptoKeys/default"
-      key_length         = 32
+      encrypted_metadata_alias = "logos"
+      kms_encryption_key       = "projects/pt-corpus-tf16-prod/locations/us/keyRings/state-encryption/cryptoKeys/default"
+      key_length               = 32
     }
 
     method "aes_gcm" "default" {
