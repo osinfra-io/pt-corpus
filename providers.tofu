@@ -27,22 +27,22 @@ terraform {
       keys = key_provider.gcp_kms.logos
     }
 
-    remote_state_data_sources {
-      default {
-        method = method.aes_gcm.logos
-
-        fallback {
-          method = method.unencrypted.migrate
-        }
-      }
-    }
-
     plan {
       method = method.aes_gcm.default
       # enforced = true
 
       fallback {
         method = method.unencrypted.migrate
+      }
+    }
+
+    remote_state_data_sources {
+      default {
+        method = method.aes_gcm.default
+
+        fallback {
+          method = method.aes_gcm.logos
+        }
       }
     }
 
