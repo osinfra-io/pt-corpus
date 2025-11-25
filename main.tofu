@@ -58,36 +58,10 @@ module "state_storage_bucket" {
   project  = module.project.id
 }
 
-# Google Billing Account IAM Member
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_billing_account_iam_member
-
-resource "google_billing_account_iam_member" "billing_users" {
-  billing_account_id = var.project_billing_account
-  member             = "group:${google_cloud_identity_group.billing_users.group_key[0].id}"
-  role               = "roles/billing.user"
-}
-
-# Google Cloud Identity Group Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/cloud_identity_group
-
-resource "google_cloud_identity_group" "billing_users" {
-  display_name = "Platform Team: Corpus Billing Users"
-
-  group_key {
-    id = "pt-corpus-billing-users@osinfra.io"
-  }
-
-  labels = {
-    # Required labels for groups
-    "cloudidentity.googleapis.com/groups.discussion_forum" = ""
-  }
-
-  parent = "customers/${var.google_customer_id}"
-}
-
 # Google Identity Group Membership
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/cloud_identity_group_membership
 
+# Billing users group membership - group created centrally in pt-logos, membership managed per team
 resource "google_cloud_identity_group_membership" "github_actions" {
   for_each = local.service_accounts
 
@@ -95,7 +69,7 @@ resource "google_cloud_identity_group_membership" "github_actions" {
     module.project
   ]
 
-  group = google_cloud_identity_group.billing_users.name
+  group = local.billing_users_group_name
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
