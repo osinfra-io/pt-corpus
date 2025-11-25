@@ -3,7 +3,7 @@
 
 locals {
   # Billing users group - centrally managed in pt-logos, referenced here for membership management
-  billing_users_group_name = module.helpers.teams["pt-corpus"].billing_users_group.name
+  billing_users_group_name = module.helpers.teams["pt-logos"].billing_users_group.name
 
   # GitHub Repositories
   # Create a map of repositories for workload identity bindings
