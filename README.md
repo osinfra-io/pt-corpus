@@ -59,7 +59,9 @@ The infrastructure creates:
 - **GitHub Actions Infrastructure** including service accounts, workload identity pools, and secure authentication
 - **State Storage** with encrypted GCS buckets and KMS keys for secure OpenTofu state management
 - **Access Controls** with team-based service accounts and repository-specific workload identity bindings
-- **Multi-environment Support** with configurations for sandbox, non-production, and production deployments## Interface
+- **Multi-environment Support** with configurations for sandbox, non-production, and production deployments
+
+## Interface
 
 ### Environment-Specific Configurations
 
