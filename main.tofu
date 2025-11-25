@@ -69,7 +69,8 @@ resource "google_cloud_identity_group_membership" "github_actions" {
     module.project
   ]
 
-  group = local.billing_users_group_name
+  create_ignore_already_exists = true
+  group                        = local.billing_users_group_name
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
