@@ -16,7 +16,7 @@ module "datadog" {
 # https://github.com/osinfra-io/opentofu-google-project
 
 module "project" {
-  source = "github.com/osinfra-io/opentofu-google-project?ref=refactor"
+  source = "github.com/osinfra-io/opentofu-google-project?ref=e0c6729c1760e2c580dffac13cbd834776c2aa3b" # v0.4.7
 
   billing_account       = var.project_billing_account
   deletion_policy       = "DELETE"
