@@ -1,12 +1,16 @@
 # Corpus
 
-**[GitHub Actions](https://github.com/osinfra-io/corpus/actions):**
+**[GitHub Actions](https://github.com/osinfra-io/pt-corpus/actions):**
 
-[![Dependabot](https://github.com/osinfra-io/corpus/actions/workflows/dependabot.yml/badge.svg)](https://github.com/osinfra-io/corpus/actions/workflows/dependabot.yml)
+[![Dependabot](https://github.com/osinfra-io/pt-corpus/actions/workflows/dependabot.yml/badge.svg)](https://github.com/osinfra-io/pt-corpus/actions/workflows/dependabot.yml)
 
 ## 📄 Repository Description
 
-This repository provides Infrastructure as Code (IaC) automation for the **Corpus** team infrastructure. As part of the **Platform Team** family, it implements standardized Google Cloud project creation with CIS compliance, Datadog monitoring integration, and foundational team infrastructure.
+This repository contains the Infrastructure as Code (IaC) that shapes the Corpus domain — the embodied layer of the platform where order takes form. In the wider hierarchy of the Platform Team, Corpus serves as the stratum where the abstract principles of Logos are translated into tangible, reliable infrastructure.
+
+Here, Google Cloud projects are called into being according to shared patterns; CIS-aligned safeguards establish the boundaries that keep chaos at bay; and Datadog observability forms the eyes of attention through which the system perceives and regulates itself.
+
+The Corpus layer is where structure becomes real, where governance becomes flesh, and where the platform’s foundational energies are harnessed so teams can build, act, and create within a world made stable enough for meaningful work.
 
 The infrastructure automates the creation of:
 
@@ -22,7 +26,7 @@ This establishes team-specific infrastructure while maintaining consistency with
 ## 🏭 Platform Information
 
 - Documentation: [docs.osinfra.io](https://docs.osinfra.io/product-guides/google-cloud-platform/corpus)
-- Service Interfaces: [github.com](https://github.com/osinfra-io/corpus/issues/new/choose)
+- Service Interfaces: [github.com](https://github.com/osinfra-io/pt-corpus/issues/new/choose)
 
 ## <img align="left" width="35" height="35" src="https://github.com/osinfra-io/github-organization-management/assets/1610100/39d6ae3b-ccc2-42db-92f1-276a5bc54e65"> Development
 
@@ -71,29 +75,34 @@ Environment configurations are stored in the `environments/` directory:
 - **`non-production.tfvars`** - Non-production environment configuration
 - **`production.tfvars`** - Production environment configuration
 
-### Required Variables
+### Core Helpers Configuration
 
-The following variables must be provided for deployment:
+The `helpers.tofu` file configures the OpenTofu Core Helpers module which provides:
 
-- **`billing_project`** - The quota project for user_project_override
-- **`project_cis_2_2_logging_sink_project_id`** - The CIS 2.2 logging sink benchmark project ID
-- **`project_folder_id`** - The numeric ID of the folder where the project should be created
+- **Logos workspace integration** - Fetches team infrastructure data from pt-logos foundational platform
+- **Environment detection** - Automatically determines environment from workspace name
+- **Project naming** - Generates standardized project names and descriptions
+- **Labeling** - Provides consistent labels for cost tracking and governance
+- **Team data** - Exposes team folder hierarchy, identity groups, and GitHub repositories
 
 ### Optional Variables
 
-Variables with defaults that can be customized:
+All variables have defaults and are optional:
 
-- **`billing_users_group_id`** - The numeric ID of the billing users group (default: "03dy6vkm4a7ag9g")
 - **`datadog_enable`** - Enable Datadog integration (default: false)
+- **`datadog_api_key`** - Datadog API key (required if `datadog_enable = true`)
+- **`datadog_app_key`** - Datadog APP key (required if `datadog_enable = true`)
+- **`google_customer_id`** - Google Workspace customer ID (default: "C01hd34v8")
 - **`project_billing_account`** - The billing account ID (default: "01C550-A2C86B-B8F16B")
 - **`project_monthly_budget_amount`** - Monthly budget in USD (default: 5)
 
-### Sensitive Variables
+### State Configuration Variables
 
-The following variables contain sensitive data and should be provided through secure methods:
+These variables are required for backend configuration and are provided by GitHub Actions workflows:
 
-- **`datadog_api_key`** - Datadog API key (required if `datadog_enable = true`)
-- **`datadog_app_key`** - Datadog APP key (required if `datadog_enable = true`)
+- **`state_bucket`** - The name of the GCS bucket to store state files
+- **`state_kms_encryption_key`** - The KMS encryption key for state and plan files
+- **`state_prefix`** - The prefix for state files in the GCS bucket
 
 ## Outputs for Downstream Consumption
 
@@ -152,6 +161,15 @@ Provides Datadog integration with:
 - Security Command Center integration
 - Automated monitoring setup
 - Compliance and security visibility
+
+### [opentofu-google-storage-bucket](https://github.com/osinfra-io/opentofu-google-storage-bucket)
+
+Provides encrypted GCS bucket creation with:
+
+- KMS encryption for state file security
+- Standardized bucket configuration
+- Consistent labeling and naming
+- Multi-environment support
 
 ### [opentofu-core-helpers](https://github.com/osinfra-io/opentofu-core-helpers)
 
