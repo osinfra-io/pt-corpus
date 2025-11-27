@@ -11,6 +11,11 @@ output "project_number" {
   value       = module.project.number
 }
 
+output "regional_subnets" {
+  description = "Regional subnets organized by region for consumption by regional deployments"
+  value       = local.regional_subnets
+}
+
 output "service_accounts" {
   description = "Service accounts created for GitHub Actions"
   value = {
@@ -37,6 +42,11 @@ output "storage_buckets" {
 output "teams" {
   description = "All teams data from logos workspaces"
   value       = module.helpers.teams
+}
+
+output "vpc_name" {
+  description = "The VPC name for regional deployments"
+  value       = var.enable_networking ? module.vpc[0].name : null
 }
 
 output "workload_identity_pools" {

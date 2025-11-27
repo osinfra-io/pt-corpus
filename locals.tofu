@@ -5,6 +5,17 @@ locals {
   # Billing users group - centrally managed in pt-logos, referenced here for membership management
   billing_users_group_name = module.helpers.teams["pt-logos"].billing_users_group.name
 
+  # Flattened subnets
+  # Transform regional subnet maps into flat map with region metadata
+  flattened_subnets = merge([
+    for region, subnets in local.team_subnets : {
+      for subnet_name, subnet in subnets :
+      subnet_name => merge(subnet, {
+        region = region
+      })
+    }
+  ]...)
+
   # GitHub Repositories
   # Create a map of repositories for workload identity bindings
   github_repositories = {
@@ -19,6 +30,10 @@ locals {
     ]) : "${item.team_key}-${item.repository}" => item
   }
 
+  # Regional subnets
+  # Organize subnets by region for regional deployments
+  regional_subnets = local.team_subnets
+
   # Service Accounts
   # Create service accounts based on teams that have GitHub repositories
   service_accounts = {
@@ -29,6 +44,12 @@ locals {
     if length(team.github_repositories) > 0
   }
 
+  # Team subnets
+  # Get subnet configuration from team data in helpers module
+  team_subnets = lookup(module.helpers.teams["pt-corpus"], "subnets", {})
+
+  # Workload Identity
+  # Configuration for external identity provider authentication
   workload_identity = {
 
     "github-actions" = {
