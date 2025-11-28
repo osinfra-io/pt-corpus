@@ -38,15 +38,9 @@ terraform {
     # https://registry.terraform.io/providers/hashicorp/google/latest/docs
 
     google = {
-      source  = "hashicorp/google"
-      version = "~> 7.9"
+      source = "hashicorp/google"
     }
   }
-
-  # Requiring OpenTofu Version
-  # https://opentofu.org/docs/language/settings#specifying-a-required-opentofu-version
-
-  required_version = "~> 1.10"
 }
 
 # Google Cloud Platform Provider

@@ -45,8 +45,11 @@ locals {
   }
 
   # Team subnets
-  # Get subnet configuration from team data in helpers module
-  team_subnets = lookup(module.helpers.teams["pt-corpus"], "subnets", {})
+  # Aggregate subnet configurations from all teams in helpers module
+  team_subnets = merge([
+    for team_key, team in module.helpers.teams :
+    lookup(team, "google_subnets", {})
+  ]...)
 
   # Workload Identity
   # Configuration for external identity provider authentication
