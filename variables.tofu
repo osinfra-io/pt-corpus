@@ -25,10 +25,39 @@ variable "datadog_enable" {
   type        = bool
 }
 
+variable "dns_records_admins" {
+  default     = []
+  description = "The set of service accounts that can administer DNS records in the networking project"
+  type        = set(string)
+}
+
+variable "enable_networking" {
+  default     = false
+  description = "Enable networking infrastructure (VPC, subnets, DNS)"
+  type        = bool
+}
+
 variable "google_customer_id" {
   default     = "C01hd34v8"
   description = "The unique customer ID assigned to you when you signed up for Google Workspace or Cloud Identity. You can look up this ID in your Admin console"
   type        = string
+}
+
+variable "iam_admins" {
+  default     = []
+  description = "The set of service accounts that can administer IAM in the networking project"
+  type        = set(string)
+}
+
+variable "private_record_sets" {
+  default     = []
+  description = "Private DNS record sets"
+  type = list(object({
+    name    = string
+    rrdatas = list(string)
+    ttl     = number
+    type    = string
+  }))
 }
 
 variable "project_billing_account" {
@@ -41,6 +70,17 @@ variable "project_monthly_budget_amount" {
   default     = 5
   description = "The monthly budget amount in USD to set for the project"
   type        = number
+}
+
+variable "public_record_sets" {
+  default     = []
+  description = "Public DNS record sets"
+  type = list(object({
+    name    = string
+    rrdatas = list(string)
+    ttl     = number
+    type    = string
+  }))
 }
 
 # These three state_* variables are required for early variable evaluation for backend and provider configuration.
@@ -59,4 +99,12 @@ variable "state_kms_encryption_key" {
 variable "state_prefix" {
   description = "The prefix for state files in the GCS bucket"
   type        = string
+}
+
+variable "vpc_service_projects" {
+  default     = {}
+  description = "The map of Kubernetes service project IDs and numbers (The number should only be added if the project is a Kubernetes service project)"
+  type = map(object({
+    number = optional(number)
+  }))
 }

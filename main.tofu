@@ -35,15 +35,61 @@ module "project" {
     "cloudresourcemanager.googleapis.com",
     "compute.googleapis.com",
     "container.googleapis.com",
+    "dns.googleapis.com",
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "monitoring.googleapis.com",
     "pubsub.googleapis.com",
+    "securitycenter.googleapis.com",
     "servicenetworking.googleapis.com",
     "serviceusage.googleapis.com",
     "sts.googleapis.com"
   ]
 }
+
+# Google Cloud DNS Module (osinfra.io)
+# https://github.com/osinfra-io/opentofu-google-cloud-dns
+
+module "private_dns" {
+  count  = var.enable_networking ? 1 : 0
+  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=v0.2.3"
+
+  dns_name = module.helpers.env == "prod" ? "priv.osinfra.io." : "${module.helpers.env}.priv.osinfra.io."
+  labels   = module.helpers.labels
+  name     = module.helpers.env == "prod" ? "priv-osinfra-io" : "${module.helpers.env}-priv-osinfra-io"
+
+  private_visibility_config_networks = [
+    module.vpc[0].self_link
+  ]
+
+  project    = module.project.id
+  visibility = "private"
+}
+
+module "public_dns" {
+  count  = var.enable_networking ? 1 : 0
+  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=v0.2.3"
+
+  dns_name   = module.helpers.env == "prod" ? "osinfra.io." : "${module.helpers.env}.osinfra.io."
+  labels     = module.helpers.labels
+  name       = module.helpers.env == "prod" ? "osinfra-io" : "${module.helpers.env}-osinfra-io"
+  project    = module.project.id
+  visibility = "public"
+}
+
+# Google Cloud NAT Module (osinfra.io)
+# https://github.com/osinfra-io/opentofu-google-cloud-nat
+
+# Note: Regional resources like Cloud NAT and subnets would need to be deployed per region
+# This implementation focuses on the main pt-corpus project infrastructure
+# Regional deployments would be handled separately per region as needed
+
+# Google Subnet Module (osinfra.io)
+# https://github.com/osinfra-io/opentofu-google-subnet
+
+# Note: Subnet creation is handled regionally. The subnet configuration from pt-logos
+# provides the blueprint, but actual deployment would be done in region-specific workspaces
+# or with regional module invocations that include proper helpers configuration
 
 # Google Storage Bucket Module (osinfra.io)
 # https://github.com/osinfra-io/opentofu-google-storage-bucket
@@ -56,6 +102,18 @@ module "state_storage_bucket" {
   location = "us"
   name     = "${each.key}-state-${module.helpers.env}"
   project  = module.project.id
+}
+
+# Google VPC Module (osinfra.io)
+# https://github.com/osinfra-io/opentofu-google-vpc
+
+module "vpc" {
+  count  = var.enable_networking ? 1 : 0
+  source = "github.com/osinfra-io/opentofu-google-network?ref=v0.2.3"
+
+  name       = "standard-shared"
+  project    = module.project.id
+  shared_vpc = true
 }
 
 # Google Identity Group Membership
@@ -85,6 +143,109 @@ resource "google_cloud_identity_group_membership" "github_actions" {
       name = "MANAGER"
     }
   }
+}
+
+# Compute Global Address Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_global_address
+
+resource "google_compute_global_address" "service_network_peering_range" {
+  count = var.enable_networking ? 1 : 0
+
+  address       = "172.16.0.0"
+  address_type  = "INTERNAL"
+  labels        = module.helpers.labels
+  name          = "service-network-peering-range"
+  network       = module.vpc[0].self_link
+  prefix_length = 16
+  project       = module.project.id
+  purpose       = "VPC_PEERING"
+}
+
+# Compute Shared VPC Service Project Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_shared_vpc_service_project
+
+resource "google_compute_shared_vpc_service_project" "this" {
+  for_each = var.enable_networking ? var.vpc_service_projects : {}
+
+  host_project    = module.project.id
+  service_project = each.key
+}
+
+# Compute Subnetwork IAM Member Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_subnetwork_iam
+
+# Note: Subnet IAM bindings would be configured in regional deployments
+# once subnets are created in specific region workspaces
+
+# DNS Record Set Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/dns_record_set
+
+resource "google_dns_record_set" "private" {
+  for_each = var.enable_networking ? { for record in var.private_record_sets : join("-", [record.name, lower(record.type)]) => record } : {}
+
+  managed_zone = module.private_dns[0].name
+  name         = "${each.value.name}.${module.private_dns[0].dns_name}"
+  project      = module.project.id
+  rrdatas      = each.value.rrdatas
+  ttl          = each.value.ttl
+  type         = each.value.type
+}
+
+resource "google_dns_record_set" "public" {
+  for_each = var.enable_networking ? { for record in var.public_record_sets : join("-", [record.name, lower(record.type)]) => record } : {}
+
+  managed_zone = module.public_dns[0].name
+  name         = "${each.value.name}.${module.public_dns[0].dns_name}"
+  project      = module.project.id
+  rrdatas      = each.value.rrdatas
+  ttl          = each.value.ttl
+  type         = each.value.type
+}
+
+# Project IAM Member Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam_member
+
+resource "google_project_iam_member" "container_engine_firewall_management" {
+  for_each = var.enable_networking ? { for k, v in var.vpc_service_projects : k => v if lookup(v, "number", null) != null } : {}
+
+  member  = "serviceAccount:service-${lookup(each.value, "number")}@container-engine-robot.iam.gserviceaccount.com"
+  project = module.project.id
+  role    = "organizations/163313809793/roles/kubernetes.hostFirewallManagement"
+}
+
+resource "google_project_iam_member" "container_engine_service_agent_user" {
+  for_each = var.enable_networking ? { for k, v in var.vpc_service_projects : k => v if lookup(v, "number", null) != null } : {}
+
+  member  = "serviceAccount:service-${lookup(each.value, "number")}@container-engine-robot.iam.gserviceaccount.com"
+  project = module.project.id
+  role    = "roles/container.hostServiceAgentUser"
+}
+
+resource "google_project_iam_member" "dns_records_admins" {
+  for_each = var.enable_networking ? var.dns_records_admins : toset([])
+
+  member  = "serviceAccount:${each.key}"
+  project = module.project.id
+  role    = "organizations/163313809793/roles/dns.recordsAdmin"
+}
+
+resource "google_project_iam_member" "iam_admins" {
+  for_each = var.enable_networking ? var.iam_admins : toset([])
+
+  member  = "serviceAccount:${each.key}"
+  project = module.project.id
+  role    = "roles/resourcemanager.projectIamAdmin"
+}
+
+# Service Networking Connection Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/service_networking_connection
+
+resource "google_service_networking_connection" "this" {
+  count = var.enable_networking ? 1 : 0
+
+  network                 = module.vpc[0].self_link
+  reserved_peering_ranges = [google_compute_global_address.service_network_peering_range[0].name]
+  service                 = "servicenetworking.googleapis.com"
 }
 
 # Google KMS Crypto Key Resource
