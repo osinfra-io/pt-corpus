@@ -47,6 +47,60 @@ module "project" {
   ]
 }
 
+# Google Kubernetes Project Module (osinfra.io)
+# https://github.com/osinfra-io/opentofu-google-project
+# Create Kubernetes projects for teams with google_kubernetes_engine_clusters
+
+module "kubernetes_projects" {
+  for_each = local.teams_with_gke_clusters
+  source   = "github.com/osinfra-io/opentofu-google-project?ref=e0c6729c1760e2c580dffac13cbd834776c2aa3b" # v0.4.7
+
+  billing_account = var.project_billing_account
+  deletion_policy = "DELETE"
+
+  description = "${title(replace(each.key, "-", " "))} Kubernetes ${title(module.helpers.env)} Environment"
+
+  folder_id             = module.helpers.environment_folder_id
+  labels                = module.helpers.labels
+  monthly_budget_amount = var.kubernetes_project_monthly_budget_amount
+  prefix                = "${each.key}-k8s"
+
+  services = concat(
+    [
+      "billingbudgets.googleapis.com",
+      "cloudasset.googleapis.com",
+      "cloudbilling.googleapis.com",
+      "cloudkms.googleapis.com",
+      "cloudresourcemanager.googleapis.com",
+      "compute.googleapis.com",
+      "container.googleapis.com",
+      "iam.googleapis.com",
+      "iamcredentials.googleapis.com",
+      "monitoring.googleapis.com",
+      "securitycenter.googleapis.com",
+      "serviceusage.googleapis.com"
+    ],
+    each.value.has_gke_hub_host ? [
+      "gkehub.googleapis.com",
+      "multiclusteringress.googleapis.com"
+    ] : []
+  )
+}
+
+# Datadog Google Cloud Platform Integration for Kubernetes Projects
+# https://github.com/osinfra-io/opentofu-datadog-google-integration
+
+module "kubernetes_datadog" {
+  for_each = var.datadog_enable ? local.teams_with_gke_clusters : {}
+  source   = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=e0f6e37034c7e8e3b69edaa100eb48d9d3f7f9e5" # v0.3.6
+
+  api_key                            = var.datadog_api_key
+  is_cspm_enabled                    = true
+  is_security_command_center_enabled = true
+  labels                             = module.helpers.labels
+  project                            = module.kubernetes_projects[each.key].id
+}
+
 # Google Cloud DNS Module (osinfra.io)
 # https://github.com/osinfra-io/opentofu-google-cloud-dns
 

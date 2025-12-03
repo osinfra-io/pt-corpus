@@ -1,6 +1,24 @@
 # Output Values
 # https://opentofu.org/docs/language/values/outputs
 
+output "kubernetes_project_ids" {
+  description = "The IDs of the Kubernetes projects"
+
+  value = {
+    for team_key, project in module.kubernetes_projects :
+    team_key => project.id
+  }
+}
+
+output "kubernetes_project_numbers" {
+  description = "The numeric IDs of the Kubernetes projects"
+
+  value = {
+    for team_key, project in module.kubernetes_projects :
+    team_key => project.number
+  }
+}
+
 output "project_id" {
   description = "The project ID"
   value       = module.project.id
