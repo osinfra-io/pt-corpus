@@ -57,13 +57,12 @@ module "kubernetes_projects" {
 
   billing_account = var.project_billing_account
   deletion_policy = "DELETE"
-
-  description = "${title(replace(each.key, "-", " "))} Kubernetes ${title(module.helpers.env)} Environment"
+  description     = "k8s"
 
   folder_id             = module.helpers.environment_folder_id
   labels                = module.helpers.labels
   monthly_budget_amount = var.kubernetes_project_monthly_budget_amount
-  prefix                = "${each.key}-k8s"
+  prefix                = each.key
 
   services = concat(
     [
