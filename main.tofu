@@ -208,7 +208,7 @@ resource "google_cloud_identity_group_membership" "project_creators" {
 
   create_ignore_already_exists = true
 
-  group = "groups/${module.helpers.teams[each.key].project_creator_groups["${each.key}-${module.helpers.env == "sb" ? "sandbox" : module.helpers.env == "np" ? "non-production" : "production"}-project-creators"]}"
+  group = module.helpers.teams[each.key].project_creator_groups["${each.key}-${module.helpers.env == "sb" ? "sandbox" : module.helpers.env == "np" ? "non-production" : "production"}-project-creators"]
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
