@@ -198,25 +198,6 @@ resource "google_cloud_identity_group_membership" "github_actions" {
   }
 }
 
-# Project creator group membership - groups created centrally in pt-logos with folder-level projectCreator role
-resource "google_cloud_identity_group_membership" "project_creators" {
-  for_each = local.service_accounts
-
-  depends_on = [
-    module.project
-  ]
-
-  create_ignore_already_exists = true
-
-  group = module.helpers.teams[each.key].project_creator_groups["${each.key}-${module.helpers.env == "sb" ? "sandbox" : module.helpers.env == "np" ? "non-production" : "production"}-project-creators"]
-
-  preferred_member_key {
-    id = google_service_account.github_actions[each.key].email
-  }
-
-  roles { name = "MEMBER" }
-}
-
 # Compute Global Address Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_global_address
 
