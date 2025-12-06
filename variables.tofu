@@ -49,6 +49,12 @@ variable "iam_admins" {
   type        = set(string)
 }
 
+variable "kubernetes_project_monthly_budget_amount" {
+  default     = 5
+  description = "The monthly budget amount in USD to set for Kubernetes projects"
+  type        = number
+}
+
 variable "private_record_sets" {
   default     = []
   description = "Private DNS record sets"

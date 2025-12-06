@@ -1,6 +1,20 @@
 # Output Values
 # https://opentofu.org/docs/language/values/outputs
 
+output "kubernetes_projects" {
+  description = "All Kubernetes projects created for each team with complete details"
+
+  value = {
+    for team_key, project in module.kubernetes_projects :
+    team_key => {
+      environment = module.helpers.env
+      id          = project.id
+      number      = project.number
+      team        = team_key
+    }
+  }
+}
+
 output "project_id" {
   description = "The project ID"
   value       = module.project.id
@@ -40,8 +54,18 @@ output "storage_buckets" {
 }
 
 output "teams" {
-  description = "All teams data from logos workspaces"
-  value       = module.helpers.teams
+  description = "All teams data from logos workspaces with Kubernetes projects enriched"
+
+  value = {
+    for team_key, team in module.helpers.teams :
+    team_key => merge(team, {
+      kubernetes_project = contains(keys(module.kubernetes_projects), team_key) ? {
+        environment = module.helpers.env
+        id          = module.kubernetes_projects[team_key].id
+        number      = module.kubernetes_projects[team_key].number
+      } : null
+    })
+  }
 }
 
 output "vpc_name" {

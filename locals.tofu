@@ -44,6 +44,42 @@ locals {
     if length(team.github_repositories) > 0
   }
 
+  # Teams with GKE Clusters
+  # Identify teams that need Kubernetes projects
+  teams_with_gke_clusters = {
+    for team_key, team in module.helpers.teams :
+    team_key => merge(team, {
+      # Check if any cluster in this team has enable_gke_hub_host = true
+      has_gke_hub_host = anytrue([
+        for cluster_key, cluster in lookup(team, "google_kubernetes_engine_clusters", {}) :
+        lookup(cluster, "enable_gke_hub_host", false)
+      ])
+    })
+    if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
+  }
+
+  # VPC Service Projects
+  # Automatically include all Kubernetes projects as VPC service projects
+  # Merges manually configured service projects with Kubernetes projects
+  vpc_service_projects = merge(
+    var.vpc_service_projects,
+    {
+      for team_key, project in module.kubernetes_projects :
+      project.id => {
+        number = project.number
+      }
+    }
+  )
+
+  # VPC Service Projects for Kubernetes
+  # Only Kubernetes projects that need GKE-specific IAM permissions
+  vpc_service_projects_kubernetes = {
+    for team_key, project in module.kubernetes_projects :
+    project.id => {
+      number = project.number
+    }
+  }
+
   # Team subnets
   # Aggregate subnet configurations from all teams in helpers module
   team_subnets = merge([
