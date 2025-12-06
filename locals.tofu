@@ -71,6 +71,15 @@ locals {
     }
   )
 
+  # VPC Service Projects for Kubernetes
+  # Only Kubernetes projects that need GKE-specific IAM permissions
+  vpc_service_projects_kubernetes = {
+    for team_key, project in module.kubernetes_projects :
+    project.id => {
+      number = project.number
+    }
+  }
+
   # Team subnets
   # Aggregate subnet configurations from all teams in helpers module
   team_subnets = merge([

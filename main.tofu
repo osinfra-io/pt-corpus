@@ -259,17 +259,17 @@ resource "google_dns_record_set" "public" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam_member
 
 resource "google_project_iam_member" "container_engine_firewall_management" {
-  for_each = var.enable_networking ? { for k, v in var.vpc_service_projects : k => v if lookup(v, "number", null) != null } : {}
+  for_each = var.enable_networking ? local.vpc_service_projects_kubernetes : {}
 
-  member  = "serviceAccount:service-${lookup(each.value, "number")}@container-engine-robot.iam.gserviceaccount.com"
+  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
   project = module.project.id
   role    = "organizations/163313809793/roles/kubernetes.hostFirewallManagement"
 }
 
 resource "google_project_iam_member" "container_engine_service_agent_user" {
-  for_each = var.enable_networking ? { for k, v in var.vpc_service_projects : k => v if lookup(v, "number", null) != null } : {}
+  for_each = var.enable_networking ? local.vpc_service_projects_kubernetes : {}
 
-  member  = "serviceAccount:service-${lookup(each.value, "number")}@container-engine-robot.iam.gserviceaccount.com"
+  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
   project = module.project.id
   role    = "roles/container.hostServiceAgentUser"
 }
