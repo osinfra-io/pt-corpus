@@ -19,6 +19,22 @@ output "kubernetes_project_numbers" {
   }
 }
 
+output "kubernetes_projects" {
+  description = "All Kubernetes projects created for each team with complete details"
+
+  value = {
+    for team_key, project in module.kubernetes_projects :
+    team_key => {
+      id          = project.id
+      name        = project.name
+      number      = project.number
+      project_id  = project.id
+      team        = team_key
+      environment = module.helpers.env
+    }
+  }
+}
+
 output "project_id" {
   description = "The project ID"
   value       = module.project.id
