@@ -218,7 +218,7 @@ resource "google_compute_global_address" "service_network_peering_range" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_shared_vpc_service_project
 
 resource "google_compute_shared_vpc_service_project" "this" {
-  for_each = var.enable_networking ? var.vpc_service_projects : {}
+  for_each = var.enable_networking ? local.vpc_service_projects : {}
 
   host_project    = module.project.id
   service_project = each.key

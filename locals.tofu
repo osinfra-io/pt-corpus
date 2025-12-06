@@ -58,6 +58,19 @@ locals {
     if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
   }
 
+  # VPC Service Projects
+  # Automatically include all Kubernetes projects as VPC service projects
+  # Merges manually configured service projects with Kubernetes projects
+  vpc_service_projects = merge(
+    var.vpc_service_projects,
+    {
+      for team_key, project in module.kubernetes_projects :
+      project.id => {
+        number = project.number
+      }
+    }
+  )
+
   # Team subnets
   # Aggregate subnet configurations from all teams in helpers module
   team_subnets = merge([
