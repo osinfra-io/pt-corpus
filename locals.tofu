@@ -36,13 +36,13 @@ locals {
 
   # Regional subnets
   # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers
-  regional_subnets = {
-    for region, subnets in local.team_subnets : region => {
+  regional_subnets = merge([
+    for region, subnets in local.team_subnets : {
       for subnet_key, subnet in subnets : subnet_key => merge(subnet, {
         service_project_number = module.kubernetes_projects[subnet.team_key].number
       })
     }
-  }
+  ]...)
 
   # Service Accounts
   # Create service accounts based on teams that have GitHub repositories
@@ -91,10 +91,18 @@ locals {
   }
 
   # Team subnets
-  # Aggregate subnet configurations from all teams in helpers module
+  # Aggregate subnet configurations from all teams in helpers module, preserving team association
   team_subnets = merge([
     for team_key, team in module.helpers.teams :
-    lookup(team, "google_subnets", {})
+    {
+      for region, subnets in lookup(team, "google_subnets", {}) :
+      region => {
+        for subnet_key, subnet in subnets :
+        subnet_key => merge(subnet, {
+          team_key = team_key
+        })
+      }
+    }
   ]...)
 
   # Workload Identity
