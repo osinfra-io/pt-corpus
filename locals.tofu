@@ -35,8 +35,14 @@ locals {
   }
 
   # Regional subnets
-  # Organize subnets by region for regional deployments
-  regional_subnets = local.team_subnets
+  # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers
+  regional_subnets = {
+    for region, subnets in local.team_subnets : region => {
+      for subnet_key, subnet in subnets : subnet_key => merge(subnet, {
+        service_project_number = module.kubernetes_projects[subnet.team_key].number
+      })
+    }
+  }
 
   # Service Accounts
   # Create service accounts based on teams that have GitHub repositories
