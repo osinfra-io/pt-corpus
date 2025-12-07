@@ -5,6 +5,10 @@ locals {
   # Billing users group - centrally managed in pt-logos, referenced here for membership management
   billing_users_group_name = module.helpers.teams["pt-logos"].billing_users_group.name
 
+  # Environment key for logos lookup (title case with hyphens preserved)
+  # Converts workspace environment (e.g., "non-production") to logos format (e.g., "Non-Production")
+  environment_key = title(module.helpers.environment)
+
   # Flattened subnets
   # Transform regional subnet maps into flat map with region metadata
   flattened_subnets = merge([
