@@ -208,7 +208,7 @@ resource "google_cloud_identity_group_membership" "project_browsers" {
   ]
 
   create_ignore_already_exists = true
-  group                        = module.helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-project-browser"].name
+  group                        = module.helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-project-browser"].email
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
