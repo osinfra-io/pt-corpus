@@ -198,9 +198,9 @@ resource "google_cloud_identity_group_membership" "github_actions" {
   }
 }
 
-# Project browser group membership - allows service accounts to list/discover projects in environment folders
+# Browser group membership - allows service accounts to list/discover resources in environment folders
 # Service accounts for teams other than pt-corpus need browser permissions
-resource "google_cloud_identity_group_membership" "project_browsers" {
+resource "google_cloud_identity_group_membership" "browsers" {
   for_each = { for key, sa in local.service_accounts : key => sa if key != "pt-corpus" }
 
   depends_on = [
@@ -208,7 +208,7 @@ resource "google_cloud_identity_group_membership" "project_browsers" {
   ]
 
   create_ignore_already_exists = true
-  group                        = module.helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-project-browser"].email
+  group                        = module.helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browser"].email
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
