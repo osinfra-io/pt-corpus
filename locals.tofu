@@ -6,7 +6,7 @@ locals {
   billing_users_group_name = module.helpers.teams["pt-logos"].billing_users_group.name
 
   # Browser group - centrally managed in pt-logos, referenced here for membership management
-  browser_group_email = module.helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browser"].email
+  browser_group_name = module.helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browser"].name
 
   # Environment key for logos lookup (title case with hyphens preserved)
   # Converts workspace environment (e.g., "non-production") to logos format (e.g., "Non-Production")

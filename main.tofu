@@ -208,7 +208,7 @@ resource "google_cloud_identity_group_membership" "browsers" {
   ]
 
   create_ignore_already_exists = true
-  group                        = local.browser_group_email
+  group                        = local.browser_group_name
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
