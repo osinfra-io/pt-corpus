@@ -59,8 +59,15 @@ module "kubernetes_projects" {
   deletion_policy = "DELETE"
   description     = "k8s"
 
-  folder_id             = module.helpers.teams[each.key].environments[local.environment_key]
-  labels                = module.helpers.labels
+  folder_id = module.helpers.teams[each.key].environments[local.environment_key]
+
+  labels = merge(
+    module.helpers.labels,
+    {
+      team = each.key
+    }
+  )
+
   monthly_budget_amount = var.kubernetes_project_monthly_budget_amount
   prefix                = each.key
 
