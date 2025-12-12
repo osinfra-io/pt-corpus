@@ -47,6 +47,66 @@ module "project" {
   ]
 }
 
+# Google Kubernetes Project Module (osinfra.io)
+# https://github.com/osinfra-io/opentofu-google-project
+# Create Kubernetes projects for teams with google_kubernetes_engine_clusters
+
+module "kubernetes_projects" {
+  for_each = local.teams_with_gke_clusters
+  source   = "github.com/osinfra-io/opentofu-google-project?ref=e0c6729c1760e2c580dffac13cbd834776c2aa3b" # v0.4.7
+
+  billing_account = var.project_billing_account
+  deletion_policy = "DELETE"
+  description     = "k8s"
+
+  folder_id = module.helpers.teams[each.key].environments[local.environment_key]
+
+  labels = merge(
+    module.helpers.labels,
+    {
+      team = each.key
+    }
+  )
+
+  monthly_budget_amount = var.kubernetes_project_monthly_budget_amount
+  prefix                = each.key
+
+  services = concat(
+    [
+      "billingbudgets.googleapis.com",
+      "cloudasset.googleapis.com",
+      "cloudbilling.googleapis.com",
+      "cloudkms.googleapis.com",
+      "cloudresourcemanager.googleapis.com",
+      "compute.googleapis.com",
+      "container.googleapis.com",
+      "iam.googleapis.com",
+      "iamcredentials.googleapis.com",
+      "monitoring.googleapis.com",
+      "securitycenter.googleapis.com",
+      "serviceusage.googleapis.com"
+    ],
+    each.value.has_gke_hub_host ? [
+      "gkehub.googleapis.com",
+      "multiclusteringress.googleapis.com"
+    ] : []
+  )
+}
+
+# Datadog Google Cloud Platform Integration for Kubernetes Projects
+# https://github.com/osinfra-io/opentofu-datadog-google-integration
+
+module "kubernetes_datadog" {
+  for_each = var.datadog_enable ? local.teams_with_gke_clusters : {}
+  source   = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=e0f6e37034c7e8e3b69edaa100eb48d9d3f7f9e5" # v0.3.6
+
+  api_key                            = var.datadog_api_key
+  is_cspm_enabled                    = true
+  is_security_command_center_enabled = true
+  labels                             = module.helpers.labels
+  project                            = module.kubernetes_projects[each.key].id
+}
+
 # Google Cloud DNS Module (osinfra.io)
 # https://github.com/osinfra-io/opentofu-google-cloud-dns
 
@@ -145,6 +205,25 @@ resource "google_cloud_identity_group_membership" "github_actions" {
   }
 }
 
+# Browser group membership - allows service accounts to list/discover resources in environment folders
+# Service accounts for teams other than pt-corpus need browser permissions
+resource "google_cloud_identity_group_membership" "browsers" {
+  for_each = { for key, sa in local.service_accounts : key => sa if key != "pt-corpus" }
+
+  depends_on = [
+    module.project
+  ]
+
+  create_ignore_already_exists = true
+  group                        = local.browser_group_name
+
+  preferred_member_key {
+    id = google_service_account.github_actions[each.key].email
+  }
+
+  roles { name = "MEMBER" }
+}
+
 # Compute Global Address Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_global_address
 
@@ -165,7 +244,7 @@ resource "google_compute_global_address" "service_network_peering_range" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_shared_vpc_service_project
 
 resource "google_compute_shared_vpc_service_project" "this" {
-  for_each = var.enable_networking ? var.vpc_service_projects : {}
+  for_each = var.enable_networking ? local.vpc_service_projects : {}
 
   host_project    = module.project.id
   service_project = each.key
@@ -206,17 +285,17 @@ resource "google_dns_record_set" "public" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam_member
 
 resource "google_project_iam_member" "container_engine_firewall_management" {
-  for_each = var.enable_networking ? { for k, v in var.vpc_service_projects : k => v if lookup(v, "number", null) != null } : {}
+  for_each = var.enable_networking ? local.vpc_service_projects_kubernetes : {}
 
-  member  = "serviceAccount:service-${lookup(each.value, "number")}@container-engine-robot.iam.gserviceaccount.com"
+  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
   project = module.project.id
   role    = "organizations/163313809793/roles/kubernetes.hostFirewallManagement"
 }
 
 resource "google_project_iam_member" "container_engine_service_agent_user" {
-  for_each = var.enable_networking ? { for k, v in var.vpc_service_projects : k => v if lookup(v, "number", null) != null } : {}
+  for_each = var.enable_networking ? local.vpc_service_projects_kubernetes : {}
 
-  member  = "serviceAccount:service-${lookup(each.value, "number")}@container-engine-robot.iam.gserviceaccount.com"
+  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
   project = module.project.id
   role    = "roles/container.hostServiceAgentUser"
 }

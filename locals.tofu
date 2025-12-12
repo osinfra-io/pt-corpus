@@ -5,6 +5,13 @@ locals {
   # Billing users group - centrally managed in pt-logos, referenced here for membership management
   billing_users_group_name = module.helpers.teams["pt-logos"].billing_users_group.name
 
+  # Browser group - centrally managed in pt-logos, referenced here for membership management
+  browser_group_name = module.helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browser"].name
+
+  # Environment key for logos lookup (title case with hyphens preserved)
+  # Converts workspace environment (e.g., "non-production") to logos format (e.g., "Non-Production")
+  environment_key = title(module.helpers.environment)
+
   # Flattened subnets
   # Transform regional subnet maps into flat map with region metadata
   flattened_subnets = merge([
@@ -31,8 +38,14 @@ locals {
   }
 
   # Regional subnets
-  # Organize subnets by region for regional deployments
-  regional_subnets = local.team_subnets
+  # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers
+  regional_subnets = {
+    for region, subnets in local.team_subnets : region => {
+      for subnet_key, subnet in subnets : subnet_key => merge(subnet, {
+        service_project_number = module.kubernetes_projects[subnet.team_key].number
+      })
+    }
+  }
 
   # Service Accounts
   # Create service accounts based on teams that have GitHub repositories
@@ -44,11 +57,55 @@ locals {
     if length(team.github_repositories) > 0
   }
 
+  # Teams with GKE Clusters
+  # Identify teams that need Kubernetes projects
+  teams_with_gke_clusters = {
+    for team_key, team in module.helpers.teams :
+    team_key => merge(team, {
+      # Check if any cluster in this team has enable_gke_hub_host = true
+      has_gke_hub_host = anytrue([
+        for cluster_key, cluster in lookup(team, "google_kubernetes_engine_clusters", {}) :
+        lookup(cluster, "enable_gke_hub_host", false)
+      ])
+    })
+    if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
+  }
+
+  # VPC Service Projects
+  # Automatically include all Kubernetes projects as VPC service projects
+  # Merges manually configured service projects with Kubernetes projects
+  vpc_service_projects = merge(
+    var.vpc_service_projects,
+    {
+      for team_key, project in module.kubernetes_projects :
+      project.id => {
+        number = project.number
+      }
+    }
+  )
+
+  # VPC Service Projects for Kubernetes
+  # Only Kubernetes projects that need GKE-specific IAM permissions
+  vpc_service_projects_kubernetes = {
+    for team_key, project in module.kubernetes_projects :
+    project.id => {
+      number = project.number
+    }
+  }
+
   # Team subnets
-  # Aggregate subnet configurations from all teams in helpers module
+  # Aggregate subnet configurations from all teams in helpers module, preserving team association
   team_subnets = merge([
     for team_key, team in module.helpers.teams :
-    lookup(team, "google_subnets", {})
+    {
+      for region, subnets in lookup(team, "google_subnets", {}) :
+      region => {
+        for subnet_key, subnet in subnets :
+        subnet_key => merge(subnet, {
+          team_key = team_key
+        })
+      }
+    }
   ]...)
 
   # Workload Identity
