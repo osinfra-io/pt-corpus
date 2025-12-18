@@ -316,6 +316,14 @@ resource "google_project_iam_member" "iam_admins" {
   role    = "roles/resourcemanager.projectIamAdmin"
 }
 
+resource "google_project_iam_member" "kubernetes_project_owners" {
+  for_each = local.teams_with_gke_clusters
+
+  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  project = module.kubernetes_projects[each.key].id
+  role    = "roles/owner"
+}
+
 # Service Networking Connection Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/service_networking_connection
 
