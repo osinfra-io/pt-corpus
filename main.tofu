@@ -83,8 +83,10 @@ module "kubernetes_projects" {
       "iam.googleapis.com",
       "iamcredentials.googleapis.com",
       "monitoring.googleapis.com",
+      "multiclusterservicediscovery.googleapis.com",
       "securitycenter.googleapis.com",
-      "serviceusage.googleapis.com"
+      "serviceusage.googleapis.com",
+      "trafficdirector.googleapis.com"
     ],
     each.value.has_gke_hub_host ? [
       "gkehub.googleapis.com",
