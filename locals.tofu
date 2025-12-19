@@ -57,6 +57,18 @@ locals {
     if length(team.github_repositories) > 0
   }
 
+  # Teams with DNS Zones
+  # Create DNS zone configurations for teams with Kubernetes clusters
+  # Extracts team name by removing prefix (e.g., pt-pneuma → pneuma)
+  teams_with_dns_zones = {
+    for team_key, team in module.helpers.teams :
+    team_key => {
+      dns_name = "${replace(team_key, "/^[a-z]+-/", "")}.${module.helpers.env == "prod" ? "" : "${module.helpers.env}."}osinfra.io."
+      name     = "${replace(team_key, "/^[a-z]+-/", "")}-${module.helpers.env == "prod" ? "" : "${module.helpers.env}-"}osinfra-io"
+    }
+    if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
+  }
+
   # Teams with GKE Clusters
   # Identify teams that need Kubernetes projects
   teams_with_gke_clusters = {

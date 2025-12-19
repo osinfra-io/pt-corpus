@@ -52,7 +52,19 @@ output "storage_buckets" {
     }
   }
 }
+output "public_dns_zones" {
+  description = "Public DNS zones created for teams with Kubernetes clusters"
 
+  value = {
+    for team_key, zone in module.public_dns :
+    team_key => {
+      dns_name     = zone.dns_name
+      name         = zone.name
+      name_servers = zone.name_servers
+      team         = team_key
+    }
+  }
+}
 output "teams" {
   description = "All teams data from logos workspaces with Kubernetes projects enriched"
 
@@ -70,7 +82,7 @@ output "teams" {
 
 output "vpc_name" {
   description = "The VPC name for regional deployments"
-  value       = var.enable_networking ? module.vpc[0].name : null
+  value       = module.vpc.name
 }
 
 output "workload_identity_pools" {

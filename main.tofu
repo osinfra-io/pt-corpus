@@ -113,7 +113,6 @@ module "kubernetes_datadog" {
 # https://github.com/osinfra-io/opentofu-google-cloud-dns
 
 module "private_dns" {
-  count  = var.enable_networking ? 1 : 0
   source = "github.com/osinfra-io/opentofu-google-network//dns?ref=v0.2.3"
 
   dns_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "${module.helpers.env}.gcp.priv.osinfra.io."
@@ -121,7 +120,7 @@ module "private_dns" {
   name     = module.helpers.env == "prod" ? "priv-gcp-osinfra-io" : "${module.helpers.env}-gcp-priv-osinfra-io"
 
   private_visibility_config_networks = [
-    module.vpc[0].self_link
+    module.vpc.self_link
   ]
 
   project    = module.project.id
@@ -129,12 +128,19 @@ module "private_dns" {
 }
 
 module "public_dns" {
-  count  = var.enable_networking ? 1 : 0
-  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=v0.2.3"
+  for_each = local.teams_with_dns_zones
+  source   = "github.com/osinfra-io/opentofu-google-network//dns?ref=v0.2.3"
 
-  dns_name   = module.helpers.env == "prod" ? "gcp.osinfra.io." : "${module.helpers.env}.gcp.osinfra.io."
-  labels     = module.helpers.labels
-  name       = module.helpers.env == "prod" ? "gcp-osinfra-io" : "${module.helpers.env}-gcp-osinfra-io"
+  dns_name = each.value.dns_name
+
+  labels = merge(
+    module.helpers.labels,
+    {
+      team = each.key
+    }
+  )
+
+  name       = each.value.name
   project    = module.project.id
   visibility = "public"
 }
@@ -170,7 +176,6 @@ module "state_storage_bucket" {
 # https://github.com/osinfra-io/opentofu-google-vpc
 
 module "vpc" {
-  count  = var.enable_networking ? 1 : 0
   source = "github.com/osinfra-io/opentofu-google-network?ref=v0.2.3"
 
   name       = "standard-shared"
@@ -230,8 +235,6 @@ resource "google_cloud_identity_group_membership" "browsers" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_global_address
 
 resource "google_compute_global_address" "service_network_peering_range" {
-  count = var.enable_networking ? 1 : 0
-
   address       = "172.16.0.0"
   address_type  = "INTERNAL"
   labels        = module.helpers.labels
@@ -246,7 +249,7 @@ resource "google_compute_global_address" "service_network_peering_range" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_shared_vpc_service_project
 
 resource "google_compute_shared_vpc_service_project" "this" {
-  for_each = var.enable_networking ? local.vpc_service_projects : {}
+  for_each = local.vpc_service_projects
 
   host_project    = module.project.id
   service_project = each.key
@@ -262,9 +265,9 @@ resource "google_compute_shared_vpc_service_project" "this" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/dns_record_set
 
 resource "google_dns_record_set" "private" {
-  for_each = var.enable_networking ? { for record in var.private_record_sets : join("-", [record.name, lower(record.type)]) => record } : {}
+  for_each = { for record in var.private_record_sets : join("-", [record.name, lower(record.type)]) => record }
 
-  managed_zone = module.private_dns[0].name
+  managed_zone = module.private_dns.name
   name         = "${each.value.name}.${module.private_dns[0].dns_name}"
   project      = module.project.id
   rrdatas      = each.value.rrdatas
@@ -273,10 +276,10 @@ resource "google_dns_record_set" "private" {
 }
 
 resource "google_dns_record_set" "public" {
-  for_each = var.enable_networking ? { for record in var.public_record_sets : join("-", [record.name, lower(record.type)]) => record } : {}
+  for_each = length(module.public_dns) > 0 ? { for record in var.public_record_sets : join("-", [record.name, lower(record.type)]) => record } : {}
 
-  managed_zone = module.public_dns[0].name
-  name         = "${each.value.name}.${module.public_dns[0].dns_name}"
+  managed_zone = values(module.public_dns)[0].name
+  name         = "${each.value.name}.${values(module.public_dns)[0].dns_name}"
   project      = module.project.id
   rrdatas      = each.value.rrdatas
   ttl          = each.value.ttl
@@ -287,7 +290,7 @@ resource "google_dns_record_set" "public" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam_member
 
 resource "google_project_iam_member" "container_engine_firewall_management" {
-  for_each = var.enable_networking ? local.vpc_service_projects_kubernetes : {}
+  for_each = local.vpc_service_projects_kubernetes
 
   member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
   project = module.project.id
@@ -295,7 +298,7 @@ resource "google_project_iam_member" "container_engine_firewall_management" {
 }
 
 resource "google_project_iam_member" "container_engine_service_agent_user" {
-  for_each = var.enable_networking ? local.vpc_service_projects_kubernetes : {}
+  for_each = local.vpc_service_projects_kubernetes
 
   member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
   project = module.project.id
@@ -303,7 +306,7 @@ resource "google_project_iam_member" "container_engine_service_agent_user" {
 }
 
 resource "google_project_iam_member" "dns_records_admins" {
-  for_each = var.enable_networking ? var.dns_records_admins : toset([])
+  for_each = var.dns_records_admins
 
   member  = "serviceAccount:${each.key}"
   project = module.project.id
@@ -311,7 +314,7 @@ resource "google_project_iam_member" "dns_records_admins" {
 }
 
 resource "google_project_iam_member" "iam_admins" {
-  for_each = var.enable_networking ? var.iam_admins : toset([])
+  for_each = var.iam_admins
 
   member  = "serviceAccount:${each.key}"
   project = module.project.id
@@ -330,10 +333,8 @@ resource "google_project_iam_member" "kubernetes_project_owners" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/service_networking_connection
 
 resource "google_service_networking_connection" "this" {
-  count = var.enable_networking ? 1 : 0
-
-  network                 = module.vpc[0].self_link
-  reserved_peering_ranges = [google_compute_global_address.service_network_peering_range[0].name]
+  network                 = module.vpc.self_link
+  reserved_peering_ranges = [google_compute_global_address.service_network_peering_range.name]
   service                 = "servicenetworking.googleapis.com"
 }
 

@@ -31,12 +31,6 @@ variable "dns_records_admins" {
   type        = set(string)
 }
 
-variable "enable_networking" {
-  default     = false
-  description = "Enable networking infrastructure (VPC, subnets, DNS)"
-  type        = bool
-}
-
 variable "google_customer_id" {
   default     = "C01hd34v8"
   description = "The unique customer ID assigned to you when you signed up for Google Workspace or Cloud Identity. You can look up this ID in your Admin console"
