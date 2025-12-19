@@ -116,9 +116,9 @@ module "private_dns" {
   count  = var.enable_networking ? 1 : 0
   source = "github.com/osinfra-io/opentofu-google-network//dns?ref=v0.2.3"
 
-  dns_name = module.helpers.env == "prod" ? "priv.osinfra.io." : "${module.helpers.env}.priv.osinfra.io."
+  dns_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "${module.helpers.env}.gcp.priv.osinfra.io."
   labels   = module.helpers.labels
-  name     = module.helpers.env == "prod" ? "priv-osinfra-io" : "${module.helpers.env}-priv-osinfra-io"
+  name     = module.helpers.env == "prod" ? "priv-gcp-osinfra-io" : "${module.helpers.env}-gcp-priv-osinfra-io"
 
   private_visibility_config_networks = [
     module.vpc[0].self_link
@@ -132,9 +132,9 @@ module "public_dns" {
   count  = var.enable_networking ? 1 : 0
   source = "github.com/osinfra-io/opentofu-google-network//dns?ref=v0.2.3"
 
-  dns_name   = module.helpers.env == "prod" ? "osinfra.io." : "${module.helpers.env}.osinfra.io."
+  dns_name   = module.helpers.env == "prod" ? "gcp.osinfra.io." : "${module.helpers.env}.gcp.osinfra.io."
   labels     = module.helpers.labels
-  name       = module.helpers.env == "prod" ? "osinfra-io" : "${module.helpers.env}-osinfra-io"
+  name       = module.helpers.env == "prod" ? "gcp-osinfra-io" : "${module.helpers.env}-gcp-osinfra-io"
   project    = module.project.id
   visibility = "public"
 }
