@@ -63,8 +63,8 @@ locals {
   teams_with_dns_zones = {
     for team_key, team in module.helpers.teams :
     team_key => {
-      dns_name = "${replace(team_key, "/^[a-z]+-/", "")}.${module.helpers.env == "prod" ? "" : "${module.helpers.env}."}osinfra.io."
-      name     = "${replace(team_key, "/^[a-z]+-/", "")}-${module.helpers.env == "prod" ? "" : "${module.helpers.env}-"}osinfra-io"
+      dns_name = module.helpers.env == "prod" ? "${replace(team_key, "/^[a-z]+-/", "")}.osinfra.io." : "${module.helpers.env}.${replace(team_key, "/^[a-z]+-/", "")}.osinfra.io."
+      name     = module.helpers.env == "prod" ? "${replace(team_key, "/^[a-z]+-/", "")}-osinfra-io" : "${module.helpers.env}-${replace(team_key, "/^[a-z]+-/", "")}-osinfra-io"
     }
     if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
   }
