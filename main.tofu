@@ -239,7 +239,7 @@ resource "google_compute_global_address" "service_network_peering_range" {
   address_type  = "INTERNAL"
   labels        = module.helpers.labels
   name          = "service-network-peering-range"
-  network       = module.vpc[0].self_link
+  network       = module.vpc.self_link
   prefix_length = 16
   project       = module.project.id
   purpose       = "VPC_PEERING"
