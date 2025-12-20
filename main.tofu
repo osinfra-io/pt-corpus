@@ -305,20 +305,15 @@ resource "google_project_iam_member" "container_engine_service_agent_user" {
   role    = "roles/container.hostServiceAgentUser"
 }
 
-resource "google_project_iam_member" "dns_records_admins" {
-  for_each = var.dns_records_admins
+# DNS Records Admin for Teams with GKE Clusters
+# Teams with Kubernetes clusters need to manage DNS records for their Istio gateways
 
-  member  = "serviceAccount:${each.key}"
+resource "google_project_iam_member" "dns_records_admins_gke_teams" {
+  for_each = local.teams_with_gke_clusters
+
+  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
   project = module.project.id
   role    = "organizations/163313809793/roles/dns.recordsAdmin"
-}
-
-resource "google_project_iam_member" "iam_admins" {
-  for_each = var.iam_admins
-
-  member  = "serviceAccount:${each.key}"
-  project = module.project.id
-  role    = "roles/resourcemanager.projectIamAdmin"
 }
 
 resource "google_project_iam_member" "kubernetes_project_owners" {

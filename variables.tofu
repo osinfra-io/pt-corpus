@@ -25,22 +25,10 @@ variable "datadog_enable" {
   type        = bool
 }
 
-variable "dns_records_admins" {
-  default     = []
-  description = "The set of service accounts that can administer DNS records in the networking project"
-  type        = set(string)
-}
-
 variable "google_customer_id" {
   default     = "C01hd34v8"
   description = "The unique customer ID assigned to you when you signed up for Google Workspace or Cloud Identity. You can look up this ID in your Admin console"
   type        = string
-}
-
-variable "iam_admins" {
-  default     = []
-  description = "The set of service accounts that can administer IAM in the networking project"
-  type        = set(string)
 }
 
 variable "kubernetes_project_monthly_budget_amount" {
