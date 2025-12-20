@@ -16,7 +16,7 @@ module "datadog" {
 # https://github.com/osinfra-io/opentofu-google-project
 
 module "project" {
-  source = "github.com/osinfra-io/opentofu-google-project?ref=e0c6729c1760e2c580dffac13cbd834776c2aa3b" # v0.4.7
+  source = "github.com/osinfra-io/opentofu-google-project?ref=7d678fc01bd757b398892e9f6297c47702d71acb" # v0.4.8
 
   billing_account       = var.project_billing_account
   deletion_policy       = "DELETE"
@@ -53,7 +53,7 @@ module "project" {
 
 module "kubernetes_projects" {
   for_each = local.teams_with_gke_clusters
-  source   = "github.com/osinfra-io/opentofu-google-project?ref=e0c6729c1760e2c580dffac13cbd834776c2aa3b" # v0.4.7
+  source   = "github.com/osinfra-io/opentofu-google-project?ref=7d678fc01bd757b398892e9f6297c47702d71acb" # v0.4.8
 
   billing_account = var.project_billing_account
   deletion_policy = "DELETE"
