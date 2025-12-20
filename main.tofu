@@ -329,6 +329,18 @@ resource "google_project_iam_member" "kubernetes_project_owners" {
   role    = "roles/owner"
 }
 
+# Multi-Cluster Service Discovery IAM Binding
+# Required for MCS setup with Shared VPC
+# https://cloud.google.com/kubernetes-engine/docs/how-to/multi-cluster-services/setup#shared-vpc
+
+resource "google_project_iam_member" "multi_cluster_service_agent" {
+  for_each = { for team_key, team in local.teams_with_gke_clusters : team_key => team if team.has_gke_hub_host }
+
+  member  = "serviceAccount:service-${module.kubernetes_projects[each.key].number}@gcp-sa-mcsd.iam.gserviceaccount.com"
+  project = module.project.id
+  role    = "roles/multiclusterservicediscovery.serviceAgent"
+}
+
 # Service Networking Connection Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/service_networking_connection
 
