@@ -57,6 +57,21 @@ locals {
     if length(team.github_repositories) > 0
   }
 
+  # Team subnets
+  # Aggregate subnet configurations from all teams in helpers module, preserving team association
+  team_subnets = merge([
+    for team_key, team in module.helpers.teams :
+    {
+      for region, subnets in lookup(team, "google_subnets", {}) :
+      region => {
+        for subnet_key, subnet in subnets :
+        subnet_key => merge(subnet, {
+          team_key = team_key
+        })
+      }
+    }
+  ]...)
+
   # Teams with DNS Zones
   # Create DNS zone configurations for teams with Kubernetes clusters
   # Extracts team name by removing prefix (e.g., pt-pneuma → pneuma)
@@ -104,21 +119,6 @@ locals {
       number = project.number
     }
   }
-
-  # Team subnets
-  # Aggregate subnet configurations from all teams in helpers module, preserving team association
-  team_subnets = merge([
-    for team_key, team in module.helpers.teams :
-    {
-      for region, subnets in lookup(team, "google_subnets", {}) :
-      region => {
-        for subnet_key, subnet in subnets :
-        subnet_key => merge(subnet, {
-          team_key = team_key
-        })
-      }
-    }
-  ]...)
 
   # Workload Identity
   # Configuration for external identity provider authentication
