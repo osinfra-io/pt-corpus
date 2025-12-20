@@ -94,11 +94,12 @@ export TF_PLUGIN_CACHE_DIR=$HOME/.opentofu.d/plugin-cache
 - **Universal alphabetical ordering**: ALL arguments, keys, and properties at EVERY level of configuration must be alphabetically ordered (applies to variables, outputs, locals, resources, data sources, and nested blocks)
 
 ### Alphabetical Ordering with Logical Grouping Exception
-Limited exception to strict alphabetical ordering allowed ONLY under these conditions:
+Limited exception to strict alphabetical ordering allowed for service-specific configuration groups:
 
-1. **Logically grouped configurations**: Variables or settings that share the same resource type and are annotated with a grouping comment
-2. **Same resource type**: Variables that configure the same type of infrastructure element
+1. **Service configuration groups**: Variables or settings that configure the same service or resource type (e.g., Datadog credentials, Google Cloud settings, project configurations)
+2. **Grouping requirement**: Must be annotated with a grouping comment explaining the logical relationship
 3. **Alphabetical within groups**: Alphabetical ordering still applies within each grouped block
+4. **Rationale**: Multi-service configurations benefit from grouping related settings together for clarity and maintainability
 
 **Example of valid logical grouping**:
 ```hcl
