@@ -3,10 +3,9 @@
 ## Repository Summary
 **Type**: Infrastructure as Code (OpenTofu/Terraform)
 **Purpose**: Team-specific infrastructure layer creating Google Cloud projects, Datadog integrations, GitHub Actions infrastructure, and state management while consuming foundational platform data from pt-logos
-**Size**: ~10 files, ~300 lines of OpenTofu configuration
 **Language**: HCL (HashiCorp Configuration Language)
 **Runtime**: OpenTofu v1.10.7+
-**Providers**: Google Cloud (v7.9.0), Datadog (v3.78.0)
+**Providers**: Google Cloud, Datadog
 
 ## Critical Build & Validation Commands
 
@@ -17,7 +16,7 @@
 pre-commit install
 
 # 2. Run all validation checks (REQUIRED before every commit)
-cd /home/brett/Repositories/osinfra-io/pt-corpus
+cd /home/brett/repositories/osinfra-io/pt-corpus
 pre-commit run -a
 ```
 
@@ -48,7 +47,7 @@ export TF_PLUGIN_CACHE_DIR=$HOME/.opentofu.d/plugin-cache
 - `variables.tofu` - Input variables with defaults (alphabetically ordered)
 - `outputs.tofu` - Output values (alphabetically ordered)
 - `providers.tofu` - Provider configurations (Google, Datadog)
-- `backend.tofu` - GCS backend with KMS encryption
+- `backend.tofu` - GCS backend with KMS encryption (repositories with multiple directories can use `shared/backend.tofu` with symlinks to eliminate duplicates)
 
 **Configuration & Environments**:
 - `environments/*.tfvars` - Per-environment configuration files
@@ -129,6 +128,13 @@ Meta-arguments (`for_each`, `count`, `depends_on`, `lifecycle`, `provider`) MUST
 resource "google_service_account" "github_actions" {
   for_each = local.service_accounts
 
+  depends_on = [google_project_service.this]
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  # Regular arguments in strict alphabetical order
   account_id   = "${each.key}-github"
   display_name = "Service account for GitHub Actions"
   project      = module.project.id
@@ -141,7 +147,7 @@ resource "google_service_account" "github_actions" {
 
 ### Formatting Rules
 - **List/Map formatting**: Always have an empty newline before any list, map, or logic block unless it's the first argument. Always have an empty newline after any list, map, or logic block unless it's the last argument.
-- **Function formatting**: Use single-line formatting for simple function calls. For complex functions with long lines or multiple arguments, break into multiple lines for readability. Prioritize readability over strict single-line requirements.
+- **Function formatting**: Use single-line formatting for simple function calls. For complex functions with long lines or multiple arguments, break into multiple lines for readability.
 
 **Function formatting examples**:
 ```hcl
