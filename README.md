@@ -1,8 +1,6 @@
 # Corpus
 
-**[GitHub Actions](https://github.com/osinfra-io/pt-corpus/actions):**
-
-[![Dependabot](https://github.com/osinfra-io/pt-corpus/actions/workflows/dependabot.yml/badge.svg)](https://github.com/osinfra-io/pt-corpus/actions/workflows/dependabot.yml)
+[![Dependabot](https://img.shields.io/github/actions/workflow/status/osinfra-io/pt-corpus/dependabot.yml?branch=main&style=for-the-badge&logo=github&label=Dependabot)](https://github.com/osinfra-io/pt-corpus/actions/workflows/dependabot.yml)
 
 ## 📄 Repository Description
 
@@ -64,6 +62,32 @@ The infrastructure creates:
 - **State Storage** with encrypted GCS buckets and KMS keys for secure OpenTofu state management
 - **Access Controls** with team-based service accounts and repository-specific workload identity bindings
 - **Multi-environment Support** with configurations for sandbox, non-production, and production deployments
+
+## GitHub Actions Workflow
+
+```mermaid
+graph LR
+    A[Workflow Trigger] --> B[Main]
+    B --> C[Regional: us-east1]
+    B --> D[Regional: us-east4]
+
+    style A fill:#e1f5ff
+    style B fill:#fff4e6
+    style C fill:#d4edda
+    style D fill:#d4edda
+```
+
+**Workflow Details:**
+
+- **Three Workflows**: Sandbox, Non-Production, Production (identical job structure)
+- **Triggers**:
+  - Sandbox: Pull request (opened, synchronize), excluding .md files
+  - Non-Production: Push to main, excluding .md files
+  - Production: Triggered when Non-Production workflow completes successfully
+- **Job Dependencies**: Regional jobs (us-east1, us-east4) run in parallel after main job completion
+- **Called Workflow**: [osinfra-io/github-opentofu-gcp-called-workflows](https://github.com/osinfra-io/github-opentofu-gcp-called-workflows) (v0.2.9)
+- **Working Directory**: Main job uses root, regional jobs use `regional/` directory
+- **Workspaces**: `main-[env]`, `us-east1-[env]`, `us-east4-[env]`
 
 ## Interface
 
