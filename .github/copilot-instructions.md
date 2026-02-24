@@ -9,7 +9,7 @@ This file defines simple, persistent coding standards and repository practices f
 
 ### Automated Pre-Commit Execution
 
-**CRITICAL: Copilot must automatically run pre-commit hooks after making ANY changes to OpenTofu files** (`.tofu`, `.tfvars`, or any file in a OpenTofu directory).
+**CRITICAL: Copilot must automatically run pre-commit hooks after making ANY changes to OpenTofu files** (`.tofu`, `.tfvars`, or any file in an OpenTofu directory).
 
 This ensures:
 - Hooks are updated to latest versions with pinned commit hashes
