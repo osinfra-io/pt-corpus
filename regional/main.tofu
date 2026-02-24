@@ -2,7 +2,7 @@
 # https://github.com/osinfra-io/opentofu-google-cloud-nat
 
 module "cloud_nat" {
-  source = "github.com/osinfra-io/opentofu-google-network//regional/nat?ref=v0.2.3"
+  source = "github.com/osinfra-io/opentofu-google-network//regional/nat?ref=90a12f38717fdc5ec3bfe9658f02e9c52cf613e0" # v0.2.3
 
   network = local.main.vpc_name
   project = local.main.project_id

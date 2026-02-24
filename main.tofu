@@ -2,8 +2,11 @@
 # https://github.com/osinfra-io/opentofu-datadog-google-integration
 
 module "datadog" {
-  count  = var.datadog_enable ? 1 : 0
   source = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=e0f6e37034c7e8e3b69edaa100eb48d9d3f7f9e5" # v0.3.6
+
+  lifecycle {
+    enabled = var.datadog_enable
+  }
 
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true
@@ -113,7 +116,7 @@ module "kubernetes_datadog" {
 # https://github.com/osinfra-io/opentofu-google-cloud-dns
 
 module "private_dns" {
-  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=v0.2.3"
+  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=90a12f38717fdc5ec3bfe9658f02e9c52cf613e0" # v0.2.3
 
   dns_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "${module.helpers.env}.gcp.priv.osinfra.io."
   labels   = module.helpers.labels
@@ -176,7 +179,7 @@ module "state_storage_bucket" {
 # https://github.com/osinfra-io/opentofu-google-vpc
 
 module "vpc" {
-  source = "github.com/osinfra-io/opentofu-google-network?ref=v0.2.3"
+  source = "github.com/osinfra-io/opentofu-google-network?ref=90a12f38717fdc5ec3bfe9658f02e9c52cf613e0" # v0.2.3
 
   name       = "standard-shared"
   project    = module.project.id
