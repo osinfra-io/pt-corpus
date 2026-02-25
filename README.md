@@ -67,14 +67,13 @@ The infrastructure creates:
 
 ```mermaid
 graph LR
-    A[Workflow Trigger] --> B[Main]
+    B[Main]
     B --> C[Regional: us-east1]
     B --> D[Regional: us-east4]
 
-    style A fill:#e1f5ff
-    style B fill:#fff4e6
-    style C fill:#d4edda
-    style D fill:#d4edda
+    style B fill:#fff4e6,color:#000
+    style C fill:#d4edda,color:#000
+    style D fill:#d4edda,color:#000
 ```
 
 **Workflow Details:**
