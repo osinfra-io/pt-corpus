@@ -2,14 +2,14 @@
 # https://github.com/osinfra-io/opentofu-google-cloud-nat
 
 module "cloud_nat" {
-  source = "github.com/osinfra-io/opentofu-google-network//regional/nat?ref=90a12f38717fdc5ec3bfe9658f02e9c52cf613e0" # v0.2.3
-
-  network = local.main.vpc_name
-  project = local.main.project_id
+  source = "github.com/osinfra-io/opentofu-google-network//regional/nat?ref=f049ec1ed7d9e4bb0bcef02ff81367ea58b56a13" # v0.3.0
 
   depends_on = [
     module.subnets
   ]
+
+  network = local.main.vpc_name
+  project = local.main.project_id
 }
 
 # Google Subnet Module (osinfra.io)
@@ -17,7 +17,7 @@ module "cloud_nat" {
 
 module "subnets" {
   for_each = local.regional_subnets
-  source   = "github.com/osinfra-io/opentofu-google-network//regional?ref=v0.2.3"
+  source   = "github.com/osinfra-io/opentofu-google-network//regional?ref=f049ec1ed7d9e4bb0bcef02ff81367ea58b56a13" # v0.3.0
 
   ip_cidr_range            = each.value.ip_cidr_range
   name                     = each.key
@@ -27,12 +27,12 @@ module "subnets" {
 
   secondary_ip_ranges = [
     {
-      ip_cidr_range = each.value.services_ip_cidr_range
-      range_name    = "k8s-secondary-services"
-    },
-    {
       ip_cidr_range = each.value.pod_ip_cidr_range
       range_name    = "k8s-secondary-pods"
+    },
+    {
+      ip_cidr_range = each.value.services_ip_cidr_range
+      range_name    = "k8s-secondary-services"
     }
   ]
 }

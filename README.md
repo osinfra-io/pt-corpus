@@ -1,6 +1,6 @@
 # Corpus
 
-[![Dependabot](https://img.shields.io/github/actions/workflow/status/osinfra-io/pt-corpus/dependabot.yml?branch=main&style=for-the-badge&logo=github&label=Dependabot)](https://github.com/osinfra-io/pt-corpus/actions/workflows/dependabot.yml)
+[![Dependabot](https://img.shields.io/github/actions/workflow/status/osinfra-io/pt-corpus/dependabot.yml?style=for-the-badge&logo=github&color=2088FF&label=Dependabot)](https://github.com/osinfra-io/pt-corpus/actions/workflows/dependabot.yml)
 
 ## 📄 Repository Description
 
@@ -13,10 +13,16 @@ The Corpus layer is where structure becomes real, where governance becomes flesh
 The infrastructure automates the creation of:
 
 - **Google Cloud Project** with CIS compliance features, budget controls, and required APIs
+- **Shared VPC** with service networking connection and peering ranges for GKE pods and services
+- **Private and Public DNS Zones** with configurable record sets per team
+- **Subnets** with GKE secondary ranges (pods and services) deployed per region
+- **Cloud NAT** for outbound internet access in each regional deployment
+- **Kubernetes Projects** (one per team with GKE clusters) with Datadog integration — GKE clusters are created by pt-pneuma
 - **Datadog Integration** with Cloud Security Posture Management (CSPM) and Security Command Center
 - **Team Infrastructure** using the logos foundational platform for consistent labeling and governance
 - **GitHub Actions Integration** with service accounts, workload identity, and state storage buckets
 - **KMS Encryption** for secure state file encryption and key management
+- **Group Memberships** for billing users and browser groups at the organizational level
 - **Multi-environment Support** with sandbox, non-production, and production configurations
 
 This establishes team-specific infrastructure while maintaining consistency with organizational standards and foundational platform practices.
@@ -45,17 +51,26 @@ See the [documentation](https://docs.osinfra.io/fundamentals/development-setup) 
 
 Links to documentation and other resources required to develop and iterate in this repository successfully.
 
-- [google cloud platform projects](https://cloud.google.com/resource-manager/docs/creating-managing-projects)
-- [google cloud platform iam](https://cloud.google.com/iam/docs/overview)
-- [google cloud platform cis benchmarks](https://cloud.google.com/security-command-center/docs/cis-benchmarks)
 - [datadog cloud security posture management](https://docs.datadoghq.com/security/cloud_security_management/)
 - [datadog google cloud integration](https://docs.datadoghq.com/integrations/google_cloud_platform/)
+- [google cloud platform cis benchmarks](https://cloud.google.com/security-command-center/docs/cis-benchmarks)
+- [google cloud platform iam](https://cloud.google.com/iam/docs/overview)
+- [google cloud platform kms](https://cloud.google.com/kms/docs)
+- [google cloud platform projects](https://cloud.google.com/resource-manager/docs/creating-managing-projects)
+- [google cloud platform vpc networking](https://cloud.google.com/vpc/docs)
+- [google kubernetes engine](https://cloud.google.com/kubernetes-engine/docs)
 
 ## Architecture
 
 The infrastructure creates:
 
 - **Google Cloud Project** with standardized naming, CIS compliance logging, budget controls, and required APIs
+- **Shared VPC** with service networking connections and peering address ranges (172.16.0.0/16) for GKE
+- **Private and Public DNS Zones** with configurable record sets managed per team
+- **Subnets** with GKE primary and secondary IP ranges deployed per region (us-east1, us-east4)
+- **Cloud NAT** for outbound connectivity in each regional deployment
+- **Kubernetes Projects** (one per team with GKE clusters) consuming Datadog integration — GKE clusters are created by pt-pneuma
+- **Shared VPC Service Project Attachments** linking Kubernetes projects to the host VPC
 - **Datadog Integration** with Cloud Security Posture Management (CSPM) and Security Command Center integration
 - **Team Infrastructure** leveraging logos foundational platform for consistent labeling, environment detection, and governance
 - **GitHub Actions Infrastructure** including service accounts, workload identity pools, and secure authentication
@@ -80,9 +95,9 @@ graph LR
 
 - **Three Workflows**: Sandbox, Non-Production, Production (identical job structure)
 - **Triggers**:
-  - Sandbox: Pull request (opened, synchronize), excluding .md files
-  - Non-Production: Push to main, excluding .md files
-  - Production: Triggered when Non-Production workflow completes successfully
+  - Sandbox: Pull request (opened, synchronize), excluding .md files; manual dispatch
+  - Non-Production: Push to main, excluding .md files; manual dispatch
+  - Production: Triggered when Non-Production workflow completes successfully; manual dispatch
 - **Job Dependencies**: Regional jobs (us-east1, us-east4) run in parallel after main job completion
 - **Called Workflow**: [osinfra-io/github-opentofu-gcp-called-workflows](https://github.com/osinfra-io/github-opentofu-gcp-called-workflows) (v0.2.9)
 - **Working Directory**: Main job uses root, regional jobs use `regional/` directory
@@ -92,7 +107,7 @@ graph LR
 
 ### Environment-Specific Configurations
 
-Environment configurations are stored in the `environments/` directory:
+Environment configurations are stored in the `environments/` directory. The three root-level files cover the main workspace; regional jobs use these same files:
 
 - **`sandbox.tfvars`** - Sandbox environment configuration
 - **`non-production.tfvars`** - Non-production environment configuration
@@ -110,7 +125,7 @@ The `helpers.tofu` file configures the OpenTofu Core Helpers module which provid
 
 ### Optional Variables
 
-All variables have defaults and are optional:
+Key optional variables (all have defaults unless noted):
 
 - **`datadog_enable`** - Enable Datadog integration (default: false)
 - **`datadog_api_key`** - Datadog API key (required if `datadog_enable = true`)
@@ -126,6 +141,13 @@ These variables are required for backend configuration and are provided by GitHu
 - **`state_bucket`** - The name of the GCS bucket to store state files
 - **`state_kms_encryption_key`** - The KMS encryption key for state and plan files
 - **`state_prefix`** - The prefix for state files in the GCS bucket
+
+### Additional Variables
+
+- **`kubernetes_project_monthly_budget_amount`** - Monthly budget in USD for Kubernetes projects (default: 5)
+- **`private_record_sets`** - List of private DNS record set configurations (default: [])
+- **`public_record_sets`** - List of public DNS record set configurations (default: [])
+- **`vpc_service_projects`** - Map of service projects to attach to the Shared VPC (default: {})
 
 ## Outputs for Downstream Consumption
 
@@ -163,7 +185,25 @@ Workload Identity Pools created for secure external authentication, providing po
 
 Workload Identity Pool Providers configured for OIDC authentication with GitHub Actions, including provider names and IDs.
 
-These outputs provide downstream repositories with comprehensive infrastructure information for consistent resource deployment, secure authentication, and access control management.## Module Dependencies
+### `kubernetes_projects`
+
+Google Cloud project IDs and numbers for Kubernetes workloads, organized per team with environment information.
+
+### `public_dns_zones`
+
+Public DNS zone information per team including DNS names and name servers for delegation.
+
+### `regional_subnets`
+
+Subnet details organized by region, consumed by regional deployments for GKE cluster configuration.
+
+### `vpc_name`
+
+The Shared VPC network name, consumed by regional deployments when creating subnets and cloud NAT.
+
+These outputs provide downstream repositories with comprehensive infrastructure information for consistent resource deployment, secure authentication, and access control management.
+
+## Module Dependencies
 
 This configuration leverages the following infrastructure modules:
 
@@ -203,24 +243,11 @@ Provides foundational platform capabilities:
 - Environment detection and naming
 - Cross-workspace data sharing
 
-## Validation Rules
+### [opentofu-google-network](https://github.com/osinfra-io/opentofu-google-network)
 
-### Project Configuration
+Provides Google Cloud networking infrastructure with:
 
-- Project must be deployed within appropriate folder hierarchy
-- CIS logging sink project must be accessible
-- Workload identity pool must exist and be accessible
-- Budget amount must be positive number
-
-### Environment Consistency
-
-- Environment configurations must align with logos foundational platform
-- Team naming must follow organizational standards
-- Resource labeling must be consistent across environments
-
-### GitHub Actions Integration
-
-- Service accounts are created only for teams with configured repositories
-- Workload identity pools enforce organization-specific restrictions
-- Repository access is limited to configured GitHub repositories per team
-- KMS encryption keys are shared across all team service accounts for cost efficiency
+- Shared VPC with service networking peering
+- Private and public DNS zone management
+- Regional subnets with GKE secondary IP ranges
+- Cloud NAT for outbound connectivity
