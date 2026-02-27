@@ -4,8 +4,8 @@ terraform {
 
   encryption {
     key_provider "gcp_kms" "default" {
-      kms_encryption_key = var.state_kms_encryption_key
       key_length         = 32
+      kms_encryption_key = var.state_kms_encryption_key
     }
 
     method "aes_gcm" "default" {

@@ -2,7 +2,7 @@
 # https://github.com/osinfra-io/opentofu-datadog-google-integration
 
 module "datadog" {
-  source = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=e0f6e37034c7e8e3b69edaa100eb48d9d3f7f9e5" # v0.3.6
+  source = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=76c7e1b08c3705820050bca0c7dd5da2f9350692" # v0.4.0
 
   lifecycle {
     enabled = var.datadog_enable
@@ -15,39 +15,18 @@ module "datadog" {
   project                            = module.project.id
 }
 
-# Google Project Module (osinfra.io)
-# https://github.com/osinfra-io/opentofu-google-project
+# Datadog Google Cloud Platform Integration for Kubernetes Projects
+# https://github.com/osinfra-io/opentofu-datadog-google-integration
 
-module "project" {
-  source = "github.com/osinfra-io/opentofu-google-project?ref=7d678fc01bd757b398892e9f6297c47702d71acb" # v0.4.8
+module "kubernetes_datadog" {
+  for_each = var.datadog_enable ? local.teams_with_gke_clusters : {}
+  source   = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=76c7e1b08c3705820050bca0c7dd5da2f9350692" # v0.4.0
 
-  billing_account       = var.project_billing_account
-  deletion_policy       = "DELETE"
-  description           = module.helpers.project_naming.description
-  folder_id             = module.helpers.environment_folder_id
-  labels                = module.helpers.labels
-  monthly_budget_amount = var.project_monthly_budget_amount
-  prefix                = module.helpers.project_naming.prefix
-
-  services = [
-    "billingbudgets.googleapis.com",
-    "cloudasset.googleapis.com",
-    "cloudbilling.googleapis.com",
-    "cloudidentity.googleapis.com",
-    "cloudkms.googleapis.com",
-    "cloudresourcemanager.googleapis.com",
-    "compute.googleapis.com",
-    "container.googleapis.com",
-    "dns.googleapis.com",
-    "iam.googleapis.com",
-    "iamcredentials.googleapis.com",
-    "monitoring.googleapis.com",
-    "pubsub.googleapis.com",
-    "securitycenter.googleapis.com",
-    "servicenetworking.googleapis.com",
-    "serviceusage.googleapis.com",
-    "sts.googleapis.com"
-  ]
+  api_key                            = var.datadog_api_key
+  is_cspm_enabled                    = true
+  is_security_command_center_enabled = true
+  labels                             = module.helpers.labels
+  project                            = module.kubernetes_projects[each.key].id
 }
 
 # Google Kubernetes Project Module (osinfra.io)
@@ -56,13 +35,12 @@ module "project" {
 
 module "kubernetes_projects" {
   for_each = local.teams_with_gke_clusters
-  source   = "github.com/osinfra-io/opentofu-google-project?ref=7d678fc01bd757b398892e9f6297c47702d71acb" # v0.4.8
+  source   = "github.com/osinfra-io/opentofu-google-project?ref=e528a6ceafaa6136c186006c6a2fe1ad0e3d26e6" # v0.5.0
 
   billing_account = var.project_billing_account
   deletion_policy = "DELETE"
   description     = "k8s"
-
-  folder_id = module.helpers.teams[each.key].environments[local.environment_key]
+  folder_id       = module.helpers.teams[each.key].environments[local.environment_key]
 
   labels = merge(
     module.helpers.labels,
@@ -98,25 +76,11 @@ module "kubernetes_projects" {
   )
 }
 
-# Datadog Google Cloud Platform Integration for Kubernetes Projects
-# https://github.com/osinfra-io/opentofu-datadog-google-integration
-
-module "kubernetes_datadog" {
-  for_each = var.datadog_enable ? local.teams_with_gke_clusters : {}
-  source   = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=e0f6e37034c7e8e3b69edaa100eb48d9d3f7f9e5" # v0.3.6
-
-  api_key                            = var.datadog_api_key
-  is_cspm_enabled                    = true
-  is_security_command_center_enabled = true
-  labels                             = module.helpers.labels
-  project                            = module.kubernetes_projects[each.key].id
-}
-
 # Google Cloud DNS Module (osinfra.io)
 # https://github.com/osinfra-io/opentofu-google-cloud-dns
 
 module "private_dns" {
-  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=90a12f38717fdc5ec3bfe9658f02e9c52cf613e0" # v0.2.3
+  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=f049ec1ed7d9e4bb0bcef02ff81367ea58b56a13" # v0.3.0
 
   dns_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "${module.helpers.env}.gcp.priv.osinfra.io."
   labels   = module.helpers.labels
@@ -130,9 +94,44 @@ module "private_dns" {
   visibility = "private"
 }
 
+# Google Project Module (osinfra.io)
+# https://github.com/osinfra-io/opentofu-google-project
+
+module "project" {
+  source = "github.com/osinfra-io/opentofu-google-project?ref=e528a6ceafaa6136c186006c6a2fe1ad0e3d26e6" # v0.5.0
+
+  billing_account       = var.project_billing_account
+  deletion_policy       = "DELETE"
+  description           = module.helpers.project_naming.description
+  folder_id             = module.helpers.environment_folder_id
+  labels                = module.helpers.labels
+  monthly_budget_amount = var.project_monthly_budget_amount
+  prefix                = module.helpers.project_naming.prefix
+
+  services = [
+    "billingbudgets.googleapis.com",
+    "cloudasset.googleapis.com",
+    "cloudbilling.googleapis.com",
+    "cloudidentity.googleapis.com",
+    "cloudkms.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "compute.googleapis.com",
+    "container.googleapis.com",
+    "dns.googleapis.com",
+    "iam.googleapis.com",
+    "iamcredentials.googleapis.com",
+    "monitoring.googleapis.com",
+    "pubsub.googleapis.com",
+    "securitycenter.googleapis.com",
+    "servicenetworking.googleapis.com",
+    "serviceusage.googleapis.com",
+    "sts.googleapis.com"
+  ]
+}
+
 module "public_dns" {
   for_each = local.teams_with_dns_zones
-  source   = "github.com/osinfra-io/opentofu-google-network//dns?ref=v0.2.3"
+  source   = "github.com/osinfra-io/opentofu-google-network//dns?ref=f049ec1ed7d9e4bb0bcef02ff81367ea58b56a13" # v0.3.0
 
   dns_name = each.value.dns_name
 
@@ -167,7 +166,7 @@ module "public_dns" {
 
 module "state_storage_bucket" {
   for_each = local.service_accounts
-  source   = "github.com/osinfra-io/opentofu-google-storage-bucket?ref=642c3eb45623e0e619dcc3c80c98ef804da7c153" # v0.2.1
+  source   = "github.com/osinfra-io/opentofu-google-storage-bucket?ref=cda73f8aeda34008171c1a0ebe5fb4d2394f071e" # v0.3.0
 
   labels   = module.helpers.labels
   location = "us"
@@ -179,7 +178,7 @@ module "state_storage_bucket" {
 # https://github.com/osinfra-io/opentofu-google-vpc
 
 module "vpc" {
-  source = "github.com/osinfra-io/opentofu-google-network?ref=90a12f38717fdc5ec3bfe9658f02e9c52cf613e0" # v0.2.3
+  source = "github.com/osinfra-io/opentofu-google-network?ref=f049ec1ed7d9e4bb0bcef02ff81367ea58b56a13" # v0.3.0
 
   name       = "standard-shared"
   project    = module.project.id
@@ -189,13 +188,32 @@ module "vpc" {
 # Google Identity Group Membership
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/cloud_identity_group_membership
 
-# Billing users group membership - group created centrally in pt-logos, membership managed per team
-resource "google_cloud_identity_group_membership" "github_actions" {
-  for_each = local.service_accounts
-
+# Browser group membership - allows service accounts to list/discover resources in environment folders
+# Service accounts for teams other than pt-corpus need browser permissions
+resource "google_cloud_identity_group_membership" "browsers" {
   depends_on = [
     module.project
   ]
+
+  for_each = { for key, sa in local.service_accounts : key => sa if key != "pt-corpus" }
+
+  create_ignore_already_exists = true
+  group                        = local.browser_group_name
+
+  preferred_member_key {
+    id = google_service_account.github_actions[each.key].email
+  }
+
+  roles { name = "MEMBER" }
+}
+
+# Billing users group membership - group created centrally in pt-logos, membership managed per team
+resource "google_cloud_identity_group_membership" "github_actions" {
+  depends_on = [
+    module.project
+  ]
+
+  for_each = local.service_accounts
 
   create_ignore_already_exists = true
   group                        = local.billing_users_group_name
@@ -213,25 +231,6 @@ resource "google_cloud_identity_group_membership" "github_actions" {
       name = "MANAGER"
     }
   }
-}
-
-# Browser group membership - allows service accounts to list/discover resources in environment folders
-# Service accounts for teams other than pt-corpus need browser permissions
-resource "google_cloud_identity_group_membership" "browsers" {
-  for_each = { for key, sa in local.service_accounts : key => sa if key != "pt-corpus" }
-
-  depends_on = [
-    module.project
-  ]
-
-  create_ignore_already_exists = true
-  group                        = local.browser_group_name
-
-  preferred_member_key {
-    id = google_service_account.github_actions[each.key].email
-  }
-
-  roles { name = "MEMBER" }
 }
 
 # Compute Global Address Resource
@@ -271,7 +270,7 @@ resource "google_dns_record_set" "private" {
   for_each = { for record in var.private_record_sets : join("-", [record.name, lower(record.type)]) => record }
 
   managed_zone = module.private_dns.name
-  name         = "${each.value.name}.${module.private_dns[0].dns_name}"
+  name         = "${each.value.name}.${module.private_dns.dns_name}"
   project      = module.project.id
   rrdatas      = each.value.rrdatas
   ttl          = each.value.ttl
@@ -289,63 +288,41 @@ resource "google_dns_record_set" "public" {
   type         = each.value.type
 }
 
-# Project IAM Member Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam_member
+# To avoid subject collisions, we are using a single provider per workload identity pool.
+# https://cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation#avoid-subject-collisions
 
-resource "google_project_iam_member" "container_engine_firewall_management" {
-  for_each = local.vpc_service_projects_kubernetes
+# IAM Workload Identity Pool Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/iam_workload_identity_pool
 
-  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
-  project = module.project.id
-  role    = "organizations/163313809793/roles/kubernetes.hostFirewallManagement"
+resource "google_iam_workload_identity_pool" "this" {
+  for_each = local.workload_identity
+
+  description               = "Workload Identity Pool for ${each.value.display_name}"
+  disabled                  = lookup(each.value, "disabled", false)
+  display_name              = each.value.display_name
+  project                   = module.project.id
+  workload_identity_pool_id = each.key
 }
 
-resource "google_project_iam_member" "container_engine_service_agent_user" {
-  for_each = local.vpc_service_projects_kubernetes
+# IAM Workload Identity Pool Provider Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/iam_workload_identity_pool_provider
 
-  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
-  project = module.project.id
-  role    = "roles/container.hostServiceAgentUser"
-}
+resource "google_iam_workload_identity_pool_provider" "this" {
+  for_each = local.workload_identity
 
-# DNS Records Admin for Teams with GKE Clusters
-# Teams with Kubernetes clusters need to manage DNS records for their Istio gateways
+  attribute_condition                = each.value.attribute_condition
+  attribute_mapping                  = each.value.attribute_mapping
+  description                        = "Workload Identity Pool Provider for ${each.value.display_name}"
+  disabled                           = lookup(each.value, "disabled", false)
+  display_name                       = "${each.value.display_name} OIDC"
+  project                            = module.project.id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.this[each.key].workload_identity_pool_id
+  workload_identity_pool_provider_id = "${each.key}-oidc"
 
-resource "google_project_iam_member" "dns_records_admins_gke_teams" {
-  for_each = local.teams_with_gke_clusters
-
-  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
-  project = module.project.id
-  role    = "organizations/163313809793/roles/dns.recordsAdmin"
-}
-
-resource "google_project_iam_member" "kubernetes_project_owners" {
-  for_each = local.teams_with_gke_clusters
-
-  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
-  project = module.kubernetes_projects[each.key].id
-  role    = "roles/owner"
-}
-
-# Multi-Cluster Service Discovery IAM Binding
-# Required for MCS setup with Shared VPC
-# https://cloud.google.com/kubernetes-engine/docs/how-to/multi-cluster-services/setup#shared-vpc
-
-resource "google_project_iam_member" "multi_cluster_service_agent" {
-  for_each = { for team_key, team in local.teams_with_gke_clusters : team_key => team if team.has_gke_hub_host }
-
-  member  = "serviceAccount:service-${module.kubernetes_projects[each.key].number}@gcp-sa-mcsd.iam.gserviceaccount.com"
-  project = module.project.id
-  role    = "roles/multiclusterservicediscovery.serviceAgent"
-}
-
-# Service Networking Connection Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/service_networking_connection
-
-resource "google_service_networking_connection" "this" {
-  network                 = module.vpc.self_link
-  reserved_peering_ranges = [google_compute_global_address.service_network_peering_range.name]
-  service                 = "servicenetworking.googleapis.com"
+  oidc {
+    allowed_audiences = lookup(each.value, "allowed_audiences", [])
+    issuer_uri        = each.value.issuer_uri
+  }
 }
 
 # Google KMS Crypto Key Resource
@@ -407,6 +384,56 @@ resource "google_kms_key_ring" "state_encryption" {
   project  = module.project.id
 }
 
+# Project IAM Member Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam_member
+
+resource "google_project_iam_member" "container_engine_firewall_management" {
+  for_each = local.vpc_service_projects_kubernetes
+
+  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
+  project = module.project.id
+  role    = "organizations/163313809793/roles/kubernetes.hostFirewallManagement"
+}
+
+resource "google_project_iam_member" "container_engine_service_agent_user" {
+  for_each = local.vpc_service_projects_kubernetes
+
+  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
+  project = module.project.id
+  role    = "roles/container.hostServiceAgentUser"
+}
+
+# DNS Records Admin for Teams with GKE Clusters
+# Teams with Kubernetes clusters need to manage DNS records for their Istio gateways
+
+resource "google_project_iam_member" "dns_records_admins_gke_teams" {
+  for_each = local.teams_with_gke_clusters
+
+  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  project = module.project.id
+  role    = "organizations/163313809793/roles/dns.recordsAdmin"
+}
+
+resource "google_project_iam_member" "kubernetes_project_owners" {
+  for_each = local.teams_with_gke_clusters
+
+  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  project = module.kubernetes_projects[each.key].id
+  role    = "roles/owner"
+}
+
+# Multi-Cluster Service Discovery IAM Binding
+# Required for MCS setup with Shared VPC
+# https://cloud.google.com/kubernetes-engine/docs/how-to/multi-cluster-services/setup#shared-vpc
+
+resource "google_project_iam_member" "multi_cluster_service_agent" {
+  for_each = { for team_key, team in local.teams_with_gke_clusters : team_key => team if team.has_gke_hub_host }
+
+  member  = "serviceAccount:service-${module.kubernetes_projects[each.key].number}@gcp-sa-mcsd.iam.gserviceaccount.com"
+  project = module.project.id
+  role    = "roles/multiclusterservicediscovery.serviceAgent"
+}
+
 # Google Service Account Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_service_account
 
@@ -429,6 +456,17 @@ resource "google_service_account_iam_member" "github_actions" {
   service_account_id = google_service_account.github_actions[each.value.name].id
 }
 
+# Service Networking Connection Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/service_networking_connection
+
+resource "google_service_networking_connection" "this" {
+  network = module.vpc.self_link
+
+  reserved_peering_ranges = [google_compute_global_address.service_network_peering_range.name]
+
+  service = "servicenetworking.googleapis.com"
+}
+
 # Google Storage Bucket IAM Member
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/storage_bucket_iam#google_storage_bucket_iam_member
 
@@ -438,41 +476,4 @@ resource "google_storage_bucket_iam_member" "github_actions" {
   bucket = module.state_storage_bucket[each.key].name
   member = "serviceAccount:${google_service_account.github_actions[each.key].email}"
   role   = "roles/storage.objectAdmin"
-}
-
-# To avoid subject collisions, we are using a single provider per workload identity pool.
-# https://cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation#avoid-subject-collisions
-
-# IAM Workload Identity Pool Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/iam_workload_identity_pool
-
-resource "google_iam_workload_identity_pool" "this" {
-  for_each = local.workload_identity
-
-  description               = "Workload Identity Pool for ${each.value.display_name}"
-  disabled                  = lookup(each.value, "disabled", false)
-  display_name              = each.value.display_name
-  project                   = module.project.id
-  workload_identity_pool_id = each.key
-}
-
-# IAM Workload Identity Pool Provider Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/iam_workload_identity_pool_provider
-
-resource "google_iam_workload_identity_pool_provider" "this" {
-  for_each = local.workload_identity
-
-  attribute_condition                = each.value.attribute_condition
-  attribute_mapping                  = each.value.attribute_mapping
-  description                        = "Workload Identity Pool Provider for ${each.value.display_name}"
-  disabled                           = lookup(each.value, "disabled", false)
-  display_name                       = "${each.value.display_name} OIDC"
-  project                            = module.project.id
-  workload_identity_pool_id          = google_iam_workload_identity_pool.this[each.key].workload_identity_pool_id
-  workload_identity_pool_provider_id = "${each.key}-oidc"
-
-  oidc {
-    allowed_audiences = lookup(each.value, "allowed_audiences", [])
-    issuer_uri        = each.value.issuer_uri
-  }
 }
