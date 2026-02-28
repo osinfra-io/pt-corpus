@@ -254,7 +254,7 @@ resource "google_compute_shared_vpc_service_project" "this" {
   for_each = local.vpc_service_projects
 
   host_project    = module.project.id
-  service_project = each.key
+  service_project = each.value.id
 }
 
 # Compute Subnetwork IAM Member Resource
