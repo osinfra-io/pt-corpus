@@ -60,6 +60,17 @@ variable "project_monthly_budget_amount" {
   type        = number
 }
 
+variable "public_dns_ns_delegations" {
+  default     = []
+  description = "NS delegation records to add to public DNS zones for subdomain delegation (e.g., delegating sb. and nonprod. subzones from the production zone)"
+  type = list(object({
+    managed_zone = string
+    name         = string
+    rrdatas      = list(string)
+    ttl          = number
+  }))
+}
+
 variable "public_record_sets" {
   default     = []
   description = "Public DNS record sets"

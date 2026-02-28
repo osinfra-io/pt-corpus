@@ -288,6 +288,20 @@ resource "google_dns_record_set" "public" {
   type         = each.value.type
 }
 
+# DNS NS Delegation Record Set Resource
+# Adds NS records to a public zone to delegate subdomains (e.g., sb. and nonprod.) to their respective zones
+
+resource "google_dns_record_set" "public_ns_delegation" {
+  for_each = { for delegation in var.public_dns_ns_delegations : delegation.name => delegation }
+
+  managed_zone = each.value.managed_zone
+  name         = "${each.value.name}."
+  project      = module.project.id
+  rrdatas      = each.value.rrdatas
+  ttl          = each.value.ttl
+  type         = "NS"
+}
+
 # To avoid subject collisions, we are using a single provider per workload identity pool.
 # https://cloud.google.com/iam/docs/best-practices-for-using-workload-identity-federation#avoid-subject-collisions
 
