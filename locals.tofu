@@ -74,12 +74,20 @@ locals {
 
   # Teams with DNS Zones
   # Create DNS zone configurations for teams with Kubernetes clusters
-  # Extracts team name by removing prefix (e.g., pt-pneuma → pneuma)
+  # Uses public_dns_zone_name from team config when set; falls back to deriving from team name (e.g., pt-pneuma → pneuma)
   teams_with_dns_zones = {
     for team_key, team in module.helpers.teams :
     team_key => {
-      dns_name = module.helpers.env == "prod" ? "${replace(team_key, "/^[a-z]+-/", "")}.osinfra.io." : "${module.helpers.env}.${replace(team_key, "/^[a-z]+-/", "")}.osinfra.io."
-      name     = module.helpers.env == "prod" ? "${replace(team_key, "/^[a-z]+-/", "")}-osinfra-io" : "${module.helpers.env}-${replace(team_key, "/^[a-z]+-/", "")}-osinfra-io"
+      dns_name = lookup(team, "public_dns_zone_name", null) != null ? (
+        module.helpers.env == "prod" ? "${team.public_dns_zone_name}." : "${module.helpers.env}.${team.public_dns_zone_name}."
+        ) : (
+        module.helpers.env == "prod" ? "${replace(team_key, "/^[a-z]+-/", "")}.osinfra.io." : "${module.helpers.env}.${replace(team_key, "/^[a-z]+-/", "")}.osinfra.io."
+      )
+      name = lookup(team, "public_dns_zone_name", null) != null ? (
+        module.helpers.env == "prod" ? replace(team.public_dns_zone_name, ".", "-") : "${module.helpers.env}-${replace(team.public_dns_zone_name, ".", "-")}"
+        ) : (
+        module.helpers.env == "prod" ? "${replace(team_key, "/^[a-z]+-/", "")}-osinfra-io" : "${module.helpers.env}-${replace(team_key, "/^[a-z]+-/", "")}-osinfra-io"
+      )
     }
     if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
   }
