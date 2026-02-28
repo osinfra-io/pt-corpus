@@ -109,21 +109,31 @@ locals {
   # VPC Service Projects
   # Automatically include all Kubernetes projects as VPC service projects
   # Merges manually configured service projects with Kubernetes projects
+  # Keys must be statically known at plan time, so team_key is used instead of project.id
   vpc_service_projects = merge(
     {
       for team_key, project in module.kubernetes_projects :
-      project.id => {
+      team_key => {
+        id     = project.id
         number = project.number
       }
     },
-    var.vpc_service_projects
+    {
+      for project_id, project in var.vpc_service_projects :
+      project_id => {
+        id     = project_id
+        number = project.number
+      }
+    }
   )
 
   # VPC Service Projects for Kubernetes
   # Only Kubernetes projects that need GKE-specific IAM permissions
+  # Keys must be statically known at plan time, so team_key is used instead of project.id
   vpc_service_projects_kubernetes = {
     for team_key, project in module.kubernetes_projects :
-    project.id => {
+    team_key => {
+      id     = project.id
       number = project.number
     }
   }
