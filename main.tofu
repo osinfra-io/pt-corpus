@@ -35,7 +35,7 @@ module "kubernetes_datadog" {
 
 module "kubernetes_projects" {
   for_each = local.teams_with_gke_clusters
-  source   = "github.com/osinfra-io/opentofu-google-project?ref=e8ed8d8fb82c6fbcf0b2489373d64808124646dc" # v0.6.1
+  source   = "github.com/osinfra-io/opentofu-google-project?ref=f16d0e809ec3412c06f31e6da402a97340ff1a4c" # v0.6.2
 
   billing_account                 = var.project_billing_account
   cis_2_2_logging_sink_project_id = module.project.id
@@ -99,7 +99,7 @@ module "private_dns" {
 # https://github.com/osinfra-io/opentofu-google-project
 
 module "project" {
-  source = "github.com/osinfra-io/opentofu-google-project?ref=e8ed8d8fb82c6fbcf0b2489373d64808124646dc" # v0.6.1
+  source = "github.com/osinfra-io/opentofu-google-project?ref=f16d0e809ec3412c06f31e6da402a97340ff1a4c" # v0.6.2
 
   billing_account       = var.project_billing_account
   deletion_policy       = "DELETE"
