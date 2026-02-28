@@ -15,6 +15,11 @@ output "kubernetes_projects" {
   }
 }
 
+output "osinfra_io_dns_zone" {
+  description = "The osinfra.io public DNS zone (production only)"
+  value       = try(module.osinfra_io_dns["osinfra-io"], null)
+}
+
 output "project_id" {
   description = "The project ID"
   value       = module.project.id
