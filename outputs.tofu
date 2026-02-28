@@ -18,10 +18,10 @@ output "kubernetes_projects" {
 output "osinfra_io_dns_zone" {
   description = "The osinfra.io public DNS zone (production only)"
 
-  value = length(module.osinfra_io_dns) > 0 ? {
-    dns_name     = module.osinfra_io_dns[0].dns_name
-    name         = module.osinfra_io_dns[0].name
-    name_servers = module.osinfra_io_dns[0].name_servers
+  value = module.helpers.env == "prod" ? {
+    dns_name     = module.osinfra_io_dns.dns_name
+    name         = module.osinfra_io_dns.name
+    name_servers = module.osinfra_io_dns.name_servers
   } : null
 }
 
