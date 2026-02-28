@@ -37,10 +37,11 @@ module "kubernetes_projects" {
   for_each = local.teams_with_gke_clusters
   source   = "github.com/osinfra-io/opentofu-google-project?ref=e8ed8d8fb82c6fbcf0b2489373d64808124646dc" # v0.6.1
 
-  billing_account = var.project_billing_account
-  deletion_policy = "DELETE"
-  description     = "k8s"
-  folder_id       = module.helpers.teams[each.key].environments[local.environment_key]
+  billing_account                 = var.project_billing_account
+  cis_2_2_logging_sink_project_id = module.project.id
+  deletion_policy                 = "DELETE"
+  description                     = "k8s"
+  folder_id                       = module.helpers.teams[each.key].environments[local.environment_key]
 
   labels = merge(
     module.helpers.labels,
