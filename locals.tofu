@@ -39,11 +39,13 @@ locals {
 
   # Regional subnets
   # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers
+  # Only includes subnets for teams that have a Kubernetes project
   regional_subnets = {
     for region, subnets in local.team_subnets : region => {
       for subnet_key, subnet in subnets : subnet_key => merge(subnet, {
         service_project_number = module.kubernetes_projects[subnet.team_key].number
       })
+      if contains(keys(module.kubernetes_projects), subnet.team_key)
     }
   }
 
