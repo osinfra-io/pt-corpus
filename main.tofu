@@ -80,7 +80,7 @@ module "kubernetes_projects" {
 # https://github.com/osinfra-io/opentofu-google-cloud-dns
 
 module "private_dns" {
-  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=f049ec1ed7d9e4bb0bcef02ff81367ea58b56a13" # v0.3.0
+  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
   dns_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "${module.helpers.env}.gcp.priv.osinfra.io."
   labels   = module.helpers.labels
@@ -131,7 +131,7 @@ module "project" {
 
 module "public_dns" {
   for_each = local.teams_with_dns_zones
-  source   = "github.com/osinfra-io/opentofu-google-network//dns?ref=f049ec1ed7d9e4bb0bcef02ff81367ea58b56a13" # v0.3.0
+  source   = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
   dns_name = each.value.dns_name
 
@@ -178,7 +178,7 @@ module "state_storage_bucket" {
 # https://github.com/osinfra-io/opentofu-google-vpc
 
 module "vpc" {
-  source = "github.com/osinfra-io/opentofu-google-network?ref=f049ec1ed7d9e4bb0bcef02ff81367ea58b56a13" # v0.3.0
+  source = "github.com/osinfra-io/opentofu-google-network?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
   name       = "standard-shared"
   project    = module.project.id
