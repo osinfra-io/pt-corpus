@@ -2,6 +2,7 @@
 # https://opentofu.org/docs/language/import
 
 import {
-  id = "projects/${module.project.id}/managedZones/osinfra-io"
-  to = module.osinfra_io_dns.google_dns_managed_zone.this
+  for_each = toset(module.helpers.env == "prod" ? ["osinfra-io"] : [])
+  id       = "projects/${module.project.id}/managedZones/${each.key}"
+  to       = module.osinfra_io_dns[each.key].google_dns_managed_zone.this
 }
