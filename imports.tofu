@@ -6,3 +6,8 @@ import {
   id       = "projects/${module.project.id}/managedZones/${each.key}"
   to       = module.osinfra_io_dns[each.key].google_dns_managed_zone.this
 }
+
+import {
+  id = "pt-pneuma-state-${module.helpers.env}"
+  to = module.state_storage_bucket["pt-pneuma"].google_storage_bucket.this
+}
