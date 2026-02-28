@@ -129,6 +129,17 @@ module "project" {
   ]
 }
 
+module "osinfra_io_dns" {
+  count  = module.helpers.env == "prod" ? 1 : 0
+  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
+
+  dns_name   = "osinfra.io."
+  labels     = module.helpers.labels
+  name       = "osinfra-io"
+  project    = module.project.id
+  visibility = "public"
+}
+
 module "public_dns" {
   for_each = local.teams_with_dns_zones
   source   = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
