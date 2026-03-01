@@ -17,7 +17,7 @@ output "kubernetes_projects" {
 
 output "osinfra_io_dns_zone" {
   description = "The osinfra.io public DNS zone (production only)"
-  value       = try(module.osinfra_io_dns["osinfra-io"], null)
+  value       = module.helpers.env == "prod" ? module.osinfra_io_dns : null
 }
 
 output "project_id" {

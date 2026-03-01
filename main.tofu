@@ -131,12 +131,15 @@ module "project" {
 }
 
 module "osinfra_io_dns" {
-  for_each = toset(module.helpers.env == "prod" ? ["osinfra-io"] : [])
-  source   = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
+  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
+
+  lifecycle {
+    enabled = module.helpers.env == "prod"
+  }
 
   dns_name   = "osinfra.io."
   labels     = module.helpers.labels
-  name       = each.key
+  name       = "osinfra-io"
   project    = module.project.id
   visibility = "public"
 }
@@ -355,13 +358,13 @@ resource "google_iam_workload_identity_pool_provider" "this" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key
 
 resource "google_kms_crypto_key" "state_encryption" {
-  # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
-
   # CryptoKeys cannot be deleted from Google Cloud Platform. Destroying a OpenTofu-managed CryptoKey will
   # remove it from state and delete all CryptoKeyVersions, rendering the key unusable, but will not delete
   # the resource from the project. When OpenTofu destroys these keys, any data previously encrypted with
   # these keys will be irrecoverable. For this reason, it is strongly recommended that you add lifecycle
   # hooks to the resource to prevent accidental destruction.
+
+  # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
 
   # lifecycle {
   #   prevent_destroy = true
@@ -453,17 +456,16 @@ resource "google_project_iam_member" "kubernetes_project_owners" {
 # https://cloud.google.com/kubernetes-engine/docs/how-to/multi-cluster-services/setup#shared-vpc
 
 resource "google_project_service_identity" "multi_cluster_service_agent" {
-  provider = google-beta # Required for google_project_service_identity
-  for_each = { for team_key, team in local.teams_with_gke_clusters : team_key => team if team.has_gke_hub_host }
-
   depends_on = [module.kubernetes_projects]
+  for_each   = local.teams_with_gke_hub_host
+  provider   = google-beta # Required for google_project_service_identity
 
   project = module.kubernetes_projects[each.key].id
   service = "multiclusterservicediscovery.googleapis.com"
 }
 
 resource "google_project_iam_member" "multi_cluster_service_agent" {
-  for_each = { for team_key, team in local.teams_with_gke_clusters : team_key => team if team.has_gke_hub_host }
+  for_each = local.teams_with_gke_hub_host
 
   member  = "serviceAccount:${google_project_service_identity.multi_cluster_service_agent[each.key].email}"
   project = module.project.id
