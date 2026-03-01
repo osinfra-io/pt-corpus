@@ -37,10 +37,11 @@ module "kubernetes_projects" {
   for_each = local.teams_with_gke_clusters
   source   = "github.com/osinfra-io/opentofu-google-project?ref=0108cf1150904e098f41206c7860f7889159d184" # v0.6.6
 
-  billing_account = var.project_billing_account
-  deletion_policy = "DELETE"
-  description     = "k8s"
-  folder_id       = module.helpers.teams[each.key].environments[local.environment_key]
+  billing_account                 = var.project_billing_account
+  cis_2_2_logging_sink_project_id = module.project.id
+  deletion_policy                 = "DELETE"
+  description                     = "k8s"
+  folder_id                       = module.helpers.teams[each.key].environments[local.environment_key]
 
   labels = merge(
     module.helpers.labels,
@@ -82,9 +83,9 @@ module "kubernetes_projects" {
 module "private_dns" {
   source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
-  dns_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "${module.helpers.env}.gcp.priv.osinfra.io."
+  dns_name = local.private_dns_dns_name
   labels   = module.helpers.labels
-  name     = module.helpers.env == "prod" ? "priv-gcp-osinfra-io" : "${module.helpers.env}-gcp-priv-osinfra-io"
+  name     = local.private_dns_name
 
   private_visibility_config_networks = [
     module.vpc.self_link
