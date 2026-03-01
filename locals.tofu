@@ -113,6 +113,14 @@ locals {
     if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
   }
 
+  # Teams with GKE Hub Host
+  # Subset of teams_with_gke_clusters where the team has a GKE Hub host cluster
+  teams_with_gke_hub_host = {
+    for team_key, team in local.teams_with_gke_clusters :
+    team_key => team
+    if team.has_gke_hub_host
+  }
+
   # VPC Service Projects
   # Automatically include all Kubernetes projects as VPC service projects
   # Merges manually configured service projects with Kubernetes projects
