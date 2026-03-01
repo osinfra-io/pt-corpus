@@ -37,6 +37,11 @@ locals {
     ]) : "${item.team_key}-${item.repository}" => item
   }
 
+  # Private DNS zone name and DNS name
+  # Used by the private DNS module to construct environment-specific zone identifiers
+  private_dns_dns_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "${module.helpers.env}.gcp.priv.osinfra.io."
+  private_dns_name     = module.helpers.env == "prod" ? "priv-gcp-osinfra-io" : "${module.helpers.env}-gcp-priv-osinfra-io"
+
   # Regional subnets
   # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers
   # Only includes subnets for teams that have a Kubernetes project

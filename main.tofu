@@ -83,9 +83,9 @@ module "kubernetes_projects" {
 module "private_dns" {
   source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
-  dns_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "${module.helpers.env}.gcp.priv.osinfra.io."
+  dns_name = local.private_dns_dns_name
   labels   = module.helpers.labels
-  name     = module.helpers.env == "prod" ? "priv-gcp-osinfra-io" : "${module.helpers.env}-gcp-priv-osinfra-io"
+  name     = local.private_dns_name
 
   private_visibility_config_networks = [
     module.vpc.self_link
