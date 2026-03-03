@@ -34,7 +34,7 @@ module "kubernetes_datadog" {
 
 resource "google_artifact_registry_repository" "docker_remote" {
   lifecycle {
-    enabled = length(local.teams_with_artifact_registries) > 0
+    enabled = length(local.teams_with_artifact_registries) > 0 && module.helpers.env == "prod"
   }
 
   description = "Registry for multi-region - US Docker Hub"
@@ -55,7 +55,7 @@ resource "google_artifact_registry_repository" "docker_remote" {
 }
 
 resource "google_artifact_registry_repository" "docker_standard" {
-  for_each = local.teams_with_artifact_registries
+  for_each = module.helpers.env == "prod" ? local.teams_with_artifact_registries : {}
 
   description   = "Registry for multi-region - US Standard : ${each.key}"
   format        = "DOCKER"
@@ -66,7 +66,7 @@ resource "google_artifact_registry_repository" "docker_standard" {
 }
 
 resource "google_artifact_registry_repository" "docker_virtual" {
-  for_each = local.teams_with_artifact_registries
+  for_each = module.helpers.env == "prod" ? local.teams_with_artifact_registries : {}
 
   description   = "Registry for multi-region - US Virtual : ${each.key}"
   format        = "DOCKER"
@@ -95,7 +95,7 @@ resource "google_artifact_registry_repository" "docker_virtual" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository_iam
 
 resource "google_artifact_registry_repository_iam_binding" "docker_standard_writers" {
-  for_each = local.teams_with_artifact_registries
+  for_each = module.helpers.env == "prod" ? local.teams_with_artifact_registries : {}
 
   location   = "us"
   members    = each.value.registry_writers
@@ -105,7 +105,7 @@ resource "google_artifact_registry_repository_iam_binding" "docker_standard_writ
 }
 
 resource "google_artifact_registry_repository_iam_binding" "docker_virtual_readers" {
-  for_each = local.teams_with_artifact_registries
+  for_each = module.helpers.env == "prod" ? local.teams_with_artifact_registries : {}
 
   location   = "us"
   members    = each.value.registry_readers
