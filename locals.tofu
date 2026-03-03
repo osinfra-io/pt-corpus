@@ -70,7 +70,8 @@ locals {
   }
 
   # Teams with Artifact Registries
-  # Teams that have google_artifact_registry_groups_memberships defined in pt-logos
+  # Teams that have registry-readers and registry-writers identity groups (created when
+  # google_artifact_registry_groups_memberships is defined in pt-logos)
   teams_with_artifact_registries = {
     for team_key, team in module.helpers.teams :
     team_key => {
@@ -82,7 +83,9 @@ locals {
         "group:${team.identity_groups["registry-writers"].email}"
       ]
     }
-    if lookup(team, "google_artifact_registry_groups_memberships", null) != null
+    if contains(keys(team.identity_groups), "registry-readers") &&
+    contains(keys(team.identity_groups), "registry-writers") &&
+    contains(keys(module.kubernetes_projects), team_key)
   }
 
   # Team DNS Subdomains
