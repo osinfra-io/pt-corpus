@@ -179,6 +179,14 @@ locals {
 
   # Workload Identity
   # Configuration for external identity provider authentication
+
+  # CEL ref assertions for the github-actions WIF provider (non-sandbox only).
+  # Add entries here to permit additional refs (e.g. release tags).
+  github_actions_ref_conditions = module.helpers.env == "sb" ? [] : [
+    "assertion.ref == \"refs/heads/main\"",
+    "assertion.ref.startsWith(\"refs/tags/\")",
+  ]
+
   workload_identity = {
 
     "github-actions" = {
@@ -199,7 +207,7 @@ locals {
 
       # curl -H "Authorization: token $GITHUB_READ_ORG_TOKEN" https://api.github.com/orgs/osinfra-io
 
-      attribute_condition = module.helpers.env == "sb" ? "assertion.repository_owner_id==\"104685378\"" : "assertion.repository_owner_id==\"104685378\" && assertion.ref==\"refs/heads/main\""
+      attribute_condition = module.helpers.env == "sb" ? "assertion.repository_owner_id==\"104685378\"" : "assertion.repository_owner_id==\"104685378\" && (${join(" || ", local.github_actions_ref_conditions)})"
 
       # The tokens issued by your external identity provider contain one or more attributes. Some identity providers refer
       # to these attributes as claims. An attribute mapping defines how to derive the value of the Google STS token attribute
