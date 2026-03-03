@@ -16,8 +16,8 @@ output "kubernetes_projects" {
 }
 
 output "osinfra_io_dns_zone" {
-  description = "The osinfra.io public DNS zone (production only)"
-  value       = module.helpers.env == "prod" ? module.osinfra_io_dns : null
+  description = "The environment public DNS zone (osinfra.io in prod, sb.osinfra.io in sandbox, nonprod.osinfra.io in non-production)"
+  value       = module.osinfra_io_dns
 }
 
 output "project_id" {
@@ -28,20 +28,6 @@ output "project_id" {
 output "project_number" {
   description = "The project number"
   value       = module.project.number
-}
-
-output "public_dns_zones" {
-  description = "Public DNS zones created for teams with Kubernetes clusters"
-
-  value = {
-    for team_key, zone in module.public_dns :
-    team_key => {
-      dns_name     = zone.dns_name
-      name         = zone.name
-      name_servers = zone.name_servers
-      team         = team_key
-    }
-  }
 }
 
 output "regional_subnets" {

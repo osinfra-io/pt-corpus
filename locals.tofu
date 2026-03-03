@@ -37,10 +37,15 @@ locals {
     ]) : "${item.team_key}-${item.repository}" => item
   }
 
+  # osinfra.io DNS zone name and DNS name
+  # Constructs the environment-level public zone identifier (e.g., osinfra.io in prod, sb.osinfra.io in sandbox)
+  osinfra_io_dns_name      = module.helpers.env == "prod" ? "osinfra-io" : "${module.helpers.env}-osinfra-io"
+  osinfra_io_dns_zone_name = module.helpers.env == "prod" ? "osinfra.io." : "${module.helpers.env}.osinfra.io."
+
   # Private DNS zone name and DNS name
   # Used by the private DNS module to construct environment-specific zone identifiers
-  private_dns_dns_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "${module.helpers.env}.gcp.priv.osinfra.io."
-  private_dns_name     = module.helpers.env == "prod" ? "priv-gcp-osinfra-io" : "${module.helpers.env}-gcp-priv-osinfra-io"
+  private_dns_name      = module.helpers.env == "prod" ? "gcp-priv-osinfra-io" : "gcp-priv-${module.helpers.env}-osinfra-io"
+  private_dns_zone_name = module.helpers.env == "prod" ? "gcp.priv.osinfra.io." : "gcp.priv.${module.helpers.env}.osinfra.io."
 
   # Regional subnets
   # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers
@@ -64,6 +69,14 @@ locals {
     if length(team.github_repositories) > 0
   }
 
+  # Team DNS Subdomains
+  # Resolves the DNS subdomain for each team: uses dns_subdomain if set (e.g., "pneuma"),
+  # otherwise derives it from the team key by stripping the org prefix (e.g., pt-pneuma → pneuma).
+  team_dns_subdomains = {
+    for team_key, team in module.helpers.teams :
+    team_key => lookup(team, "dns_subdomain", replace(team_key, "/^[a-z]+-/", ""))
+  }
+
   # Team subnets
   # Aggregate subnet configurations from all teams in helpers module, preserving team association
   team_subnets = merge([
@@ -80,21 +93,13 @@ locals {
   ]...)
 
   # Teams with DNS Zones
-  # Create DNS zone configurations for teams with Kubernetes clusters
-  # Uses public_dns_zone_name from team config when set; falls back to deriving from team name (e.g., pt-pneuma → pneuma)
+  # Creates DNS zone configurations for teams with Kubernetes clusters.
+  # Zone naming is env-first: prod → pneuma.osinfra.io, sb → pneuma.sb.osinfra.io, nonprod → pneuma.nonprod.osinfra.io.
   teams_with_dns_zones = {
     for team_key, team in module.helpers.teams :
     team_key => {
-      dns_name = lookup(team, "public_dns_zone_name", null) != null ? (
-        module.helpers.env == "prod" ? "${team.public_dns_zone_name}." : "${module.helpers.env}.${team.public_dns_zone_name}."
-        ) : (
-        module.helpers.env == "prod" ? "${replace(team_key, "/^[a-z]+-/", "")}.osinfra.io." : "${module.helpers.env}.${replace(team_key, "/^[a-z]+-/", "")}.osinfra.io."
-      )
-      name = lookup(team, "public_dns_zone_name", null) != null ? (
-        module.helpers.env == "prod" ? replace(team.public_dns_zone_name, ".", "-") : "${module.helpers.env}-${replace(team.public_dns_zone_name, ".", "-")}"
-        ) : (
-        module.helpers.env == "prod" ? "${replace(team_key, "/^[a-z]+-/", "")}-osinfra-io" : "${module.helpers.env}-${replace(team_key, "/^[a-z]+-/", "")}-osinfra-io"
-      )
+      dns_name = module.helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}.osinfra.io." : "${local.team_dns_subdomains[team_key]}.${module.helpers.env}.osinfra.io."
+      name     = module.helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}-osinfra-io" : "${local.team_dns_subdomains[team_key]}-${module.helpers.env}-osinfra-io"
     }
     if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
   }
