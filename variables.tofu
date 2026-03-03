@@ -37,16 +37,6 @@ variable "kubernetes_project_monthly_budget_amount" {
   type        = number
 }
 
-variable "private_record_sets" {
-  default     = []
-  description = "Private DNS record sets"
-  type = list(object({
-    name    = string
-    rrdatas = list(string)
-    ttl     = number
-    type    = string
-  }))
-}
 
 variable "project_billing_account" {
   default     = "01C550-A2C86B-B8F16B"
@@ -60,7 +50,7 @@ variable "project_monthly_budget_amount" {
   type        = number
 }
 
-variable "public_dns_ns_delegations" {
+variable "osinfra_io_ns_delegations" {
   default     = []
   description = "NS delegation records to add to the production osinfra.io zone delegating to environment-level zones (e.g., sb.osinfra.io and nonprod.osinfra.io)"
   type = list(object({
@@ -71,16 +61,6 @@ variable "public_dns_ns_delegations" {
   }))
 }
 
-variable "public_record_sets" {
-  default     = []
-  description = "Public DNS record sets"
-  type = list(object({
-    name    = string
-    rrdatas = list(string)
-    ttl     = number
-    type    = string
-  }))
-}
 
 # These three state_* variables are required for early variable evaluation for backend and provider configuration.
 # They are defined in the GitHub Actions called workflows and should NOT be set in the OpenTofu configuration.

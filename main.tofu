@@ -140,24 +140,6 @@ module "project" {
   ]
 }
 
-module "public_dns" {
-  for_each = local.teams_with_dns_zones
-  source   = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
-
-  dns_name = each.value.dns_name
-
-  labels = merge(
-    module.helpers.labels,
-    {
-      team = each.key
-    }
-  )
-
-  name       = each.value.name
-  project    = module.project.id
-  visibility = "public"
-}
-
 # Google Cloud NAT Module (osinfra.io)
 # https://github.com/osinfra-io/opentofu-google-cloud-nat
 
@@ -183,6 +165,24 @@ module "state_storage_bucket" {
   location = "us"
   name     = "${each.key}-state-${module.helpers.env}"
   project  = module.project.id
+}
+
+module "team_dns" {
+  for_each = local.teams_with_dns_zones
+  source   = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
+
+  dns_name = each.value.dns_name
+
+  labels = merge(
+    module.helpers.labels,
+    {
+      team = each.key
+    }
+  )
+
+  name       = each.value.name
+  project    = module.project.id
+  visibility = "public"
 }
 
 # Google VPC Module (osinfra.io)
@@ -277,8 +277,8 @@ resource "google_compute_shared_vpc_service_project" "this" {
 # DNS Record Set Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/dns_record_set
 
-resource "google_dns_record_set" "env_to_team_ns_delegation" {
-  for_each = module.public_dns
+resource "google_dns_record_set" "team_ns_delegation" {
+  for_each = module.team_dns
 
   managed_zone = module.osinfra_io_dns.name
   name         = each.value.dns_name
@@ -288,30 +288,8 @@ resource "google_dns_record_set" "env_to_team_ns_delegation" {
   type         = "NS"
 }
 
-resource "google_dns_record_set" "private" {
-  for_each = { for record in var.private_record_sets : join("-", [record.name, lower(record.type)]) => record }
-
-  managed_zone = module.private_dns.name
-  name         = "${each.value.name}.${module.private_dns.dns_name}"
-  project      = module.project.id
-  rrdatas      = each.value.rrdatas
-  ttl          = each.value.ttl
-  type         = each.value.type
-}
-
-resource "google_dns_record_set" "public" {
-  for_each = length(module.public_dns) > 0 ? { for record in var.public_record_sets : join("-", [record.name, lower(record.type)]) => record } : {}
-
-  managed_zone = values(module.public_dns)[0].name
-  name         = "${each.value.name}.${values(module.public_dns)[0].dns_name}"
-  project      = module.project.id
-  rrdatas      = each.value.rrdatas
-  ttl          = each.value.ttl
-  type         = each.value.type
-}
-
-resource "google_dns_record_set" "public_ns_delegation" {
-  for_each = { for delegation in var.public_dns_ns_delegations : delegation.name => delegation }
+resource "google_dns_record_set" "osinfra_io_ns_delegation" {
+  for_each = { for delegation in var.osinfra_io_ns_delegations : delegation.name => delegation }
 
   managed_zone = each.value.managed_zone
   name         = "${each.value.name}."

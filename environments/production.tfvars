@@ -4,7 +4,7 @@ kubernetes_project_monthly_budget_amount = 5
 # After sandbox and non-production are deployed, get nameservers from pt-corpus outputs:
 #   tofu output env_osinfra_io_dns_zone
 #
-# public_dns_ns_delegations = [
+# osinfra_io_ns_delegations = [
 #   {
 #     managed_zone = "osinfra-io"
 #     name         = "sb.osinfra.io"

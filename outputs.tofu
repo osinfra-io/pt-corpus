@@ -30,20 +30,6 @@ output "project_number" {
   value       = module.project.number
 }
 
-output "public_dns_zones" {
-  description = "Public DNS zones created for teams with Kubernetes clusters"
-
-  value = {
-    for team_key, zone in module.public_dns :
-    team_key => {
-      dns_name     = zone.dns_name
-      name         = zone.name
-      name_servers = zone.name_servers
-      team         = team_key
-    }
-  }
-}
-
 output "regional_subnets" {
   description = "Regional subnets organized by region for consumption by regional deployments"
   value       = local.regional_subnets
