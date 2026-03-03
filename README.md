@@ -66,7 +66,7 @@ The infrastructure creates:
 
 - **Google Cloud Project** with standardized naming, CIS compliance logging, budget controls, and required APIs
 - **Shared VPC** with service networking connections and peering address ranges (172.16.0.0/16) for GKE
-- **Private and Public DNS Zones** with configurable record sets managed per team
+- **Private and Public DNS Zones** with automatic team zone delegation per environment
 - **Subnets** with GKE primary and secondary IP ranges deployed per region (us-east1, us-east4)
 - **Cloud NAT** for outbound connectivity in each regional deployment
 - **Kubernetes Projects** (one per team with GKE clusters) consuming Datadog integration — GKE clusters are created by pt-pneuma
@@ -145,8 +145,7 @@ These variables are required for backend configuration and are provided by GitHu
 ### Additional Variables
 
 - **`kubernetes_project_monthly_budget_amount`** - Monthly budget in USD for Kubernetes projects (default: 5)
-- **`private_record_sets`** - List of private DNS record set configurations (default: [])
-- **`public_record_sets`** - List of public DNS record set configurations (default: [])
+- **`osinfra_io_ns_delegations`** - NS delegation records for environment-level zones in the production `osinfra.io` zone (default: [])
 - **`vpc_service_projects`** - Map of service projects to attach to the Shared VPC (default: {})
 
 ## Outputs for Downstream Consumption
@@ -189,9 +188,9 @@ Workload Identity Pool Providers configured for OIDC authentication with GitHub 
 
 Google Cloud project IDs and numbers for Kubernetes workloads, organized per team with environment information.
 
-### `public_dns_zones`
+### `osinfra_io_dns_zone`
 
-Public DNS zone information per team including DNS names and name servers for delegation.
+The environment-level DNS zone information (`dns_name`, `name`, `name_servers`) for the zone managed in this environment — `osinfra.io` in production, `sb.osinfra.io` in sandbox, `nonprod.osinfra.io` in non-production. Used to populate `osinfra_io_ns_delegations` in the production `environments/production.tfvars` after sandbox and non-production are first deployed.
 
 ### `regional_subnets`
 
@@ -202,6 +201,39 @@ Subnet details organized by region, consumed by regional deployments for GKE clu
 The Shared VPC network name, consumed by regional deployments when creating subnets and cloud NAT.
 
 These outputs provide downstream repositories with comprehensive infrastructure information for consistent resource deployment, secure authentication, and access control management.
+
+## DNS Delegation
+
+Corpus manages a three-tier DNS delegation hierarchy rooted at `osinfra.io`. Each environment gets its own zone, and team zones (created only for teams with GKE clusters) are automatically delegated into the appropriate environment zone.
+
+```mermaid
+graph LR
+    A["osinfra.io\n(prod)"]
+    B["sb.osinfra.io\n(sandbox)"]
+    C["nonprod.osinfra.io\n(non-production)"]
+    D["pneuma.osinfra.io\n(prod team zone)"]
+    E["pneuma.sb.osinfra.io\n(sandbox team zone)"]
+    F["pneuma.nonprod.osinfra.io\n(nonprod team zone)"]
+
+    A -->|NS delegation\nosinfra_io_ns_delegations| B
+    A -->|NS delegation\nosinfra_io_ns_delegations| C
+    A -->|NS delegation\nteam_ns_delegation| D
+    B -->|NS delegation\nteam_ns_delegation| E
+    C -->|NS delegation\nteam_ns_delegation| F
+
+    style A fill:#fff4e6,color:#000
+    style B fill:#d4edda,color:#000
+    style C fill:#d1ecf1,color:#000
+    style D fill:#fff4e6,color:#000
+    style E fill:#d4edda,color:#000
+    style F fill:#d1ecf1,color:#000
+```
+
+**How it works:**
+
+- `module.osinfra_io_dns` creates the env-level zone in every environment (`osinfra.io` in prod, `sb.osinfra.io` in sandbox, `nonprod.osinfra.io` in non-production)
+- `google_dns_record_set.team_ns_delegation` automatically delegates each team's zone into the env-level zone on every apply — no manual steps required for team zones
+- `google_dns_record_set.osinfra_io_ns_delegation` delegates `sb.osinfra.io` and `nonprod.osinfra.io` into the production `osinfra.io` zone — nameservers are populated in `environments/production.tfvars` after sandbox and non-production are first deployed
 
 ## Module Dependencies
 

@@ -1,20 +1,26 @@
 kubernetes_project_monthly_budget_amount = 5
 
-# NS delegation records for sb.osinfra.io and nonprod.osinfra.io in the production osinfra.io zone.
-# After sandbox and non-production are deployed, get nameservers from pt-corpus outputs:
-#   tofu output env_osinfra_io_dns_zone
-#
-# osinfra_io_ns_delegations = [
-#   {
-#     managed_zone = "osinfra-io"
-#     name         = "sb.osinfra.io"
-#     ttl          = 300
-#     rrdatas      = [] # nameservers from sandbox pt-corpus output: env_osinfra_io_dns_zone.name_servers
-#   },
-#   {
-#     managed_zone = "osinfra-io"
-#     name         = "nonprod.osinfra.io"
-#     ttl          = 300
-#     rrdatas      = [] # nameservers from non-production pt-corpus output: env_osinfra_io_dns_zone.name_servers
-#   },
-# ]
+osinfra_io_ns_delegations = [
+  {
+    managed_zone = "osinfra-io"
+    name         = "sb.osinfra.io"
+    ttl          = 300
+    rrdatas = [
+      "ns-cloud-e1.googledomains.com.",
+      "ns-cloud-e2.googledomains.com.",
+      "ns-cloud-e3.googledomains.com.",
+      "ns-cloud-e4.googledomains.com.",
+    ]
+  },
+  {
+    managed_zone = "osinfra-io"
+    name         = "nonprod.osinfra.io"
+    ttl          = 300
+    rrdatas = [
+      "ns-cloud-b1.googledomains.com.",
+      "ns-cloud-b2.googledomains.com.",
+      "ns-cloud-b3.googledomains.com.",
+      "ns-cloud-b4.googledomains.com.",
+    ]
+  },
+]
