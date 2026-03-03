@@ -330,6 +330,21 @@ resource "google_cloud_identity_group_membership" "github_actions" {
   }
 }
 
+# Registry writers group membership - adds each team's GitHub Actions SA as a member of the
+# registry-writers group so release workflows can push images to Artifact Registry
+resource "google_cloud_identity_group_membership" "registry_writers" {
+  for_each = local.teams_with_artifact_registries
+
+  create_ignore_already_exists = true
+  group                        = module.helpers.teams[each.key].identity_groups["registry-writers"].name
+
+  preferred_member_key {
+    id = google_service_account.github_actions[each.key].email
+  }
+
+  roles { name = "MEMBER" }
+}
+
 # Compute Global Address Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_global_address
 
