@@ -78,7 +78,17 @@ module "kubernetes_projects" {
 }
 
 # Google Cloud DNS Module (osinfra.io)
-# https://github.com/osinfra-io/opentofu-google-cloud-dns
+# https://github.com/osinfra-io/opentofu-google-network
+
+module "osinfra_io_dns" {
+  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
+
+  dns_name   = local.osinfra_io_dns_dns_name
+  labels     = module.helpers.labels
+  name       = local.osinfra_io_dns_name
+  project    = module.project.id
+  visibility = "public"
+}
 
 module "private_dns" {
   source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
@@ -128,20 +138,6 @@ module "project" {
     "serviceusage.googleapis.com",
     "sts.googleapis.com"
   ]
-}
-
-module "osinfra_io_dns" {
-  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
-
-  lifecycle {
-    enabled = module.helpers.env == "prod"
-  }
-
-  dns_name   = "osinfra.io."
-  labels     = module.helpers.labels
-  name       = "osinfra-io"
-  project    = module.project.id
-  visibility = "public"
 }
 
 module "public_dns" {
@@ -281,6 +277,17 @@ resource "google_compute_shared_vpc_service_project" "this" {
 # DNS Record Set Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/dns_record_set
 
+resource "google_dns_record_set" "env_to_team_ns_delegation" {
+  for_each = module.public_dns
+
+  managed_zone = module.osinfra_io_dns.name
+  name         = each.value.dns_name
+  project      = module.project.id
+  rrdatas      = each.value.name_servers
+  ttl          = 300
+  type         = "NS"
+}
+
 resource "google_dns_record_set" "private" {
   for_each = { for record in var.private_record_sets : join("-", [record.name, lower(record.type)]) => record }
 
@@ -302,9 +309,6 @@ resource "google_dns_record_set" "public" {
   ttl          = each.value.ttl
   type         = each.value.type
 }
-
-# DNS NS Delegation Record Set Resource
-# Adds NS records to a public zone to delegate subdomains (e.g., sb. and nonprod.) to their respective zones
 
 resource "google_dns_record_set" "public_ns_delegation" {
   for_each = { for delegation in var.public_dns_ns_delegations : delegation.name => delegation }

@@ -1,6 +1,11 @@
 # Output Values
 # https://opentofu.org/docs/language/values/outputs
 
+output "env_osinfra_io_dns_zone" {
+  description = "The environment public DNS zone (osinfra.io in prod, sb.osinfra.io in sandbox, nonprod.osinfra.io in non-production)"
+  value       = module.osinfra_io_dns
+}
+
 output "kubernetes_projects" {
   description = "All Kubernetes projects created for each team with complete details"
 
@@ -13,11 +18,6 @@ output "kubernetes_projects" {
       team        = team_key
     }
   }
-}
-
-output "osinfra_io_dns_zone" {
-  description = "The osinfra.io public DNS zone (production only)"
-  value       = module.helpers.env == "prod" ? module.osinfra_io_dns : null
 }
 
 output "project_id" {

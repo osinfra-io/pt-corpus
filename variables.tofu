@@ -62,7 +62,7 @@ variable "project_monthly_budget_amount" {
 
 variable "public_dns_ns_delegations" {
   default     = []
-  description = "NS delegation records to add to public DNS zones for subdomain delegation (e.g., delegating sb. and nonprod. subzones from the production zone)"
+  description = "NS delegation records to add to the production osinfra.io zone delegating to environment-level zones (e.g., sb.osinfra.io and nonprod.osinfra.io)"
   type = list(object({
     managed_zone = string
     name         = string
