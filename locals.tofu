@@ -69,6 +69,22 @@ locals {
     if length(team.github_repositories) > 0
   }
 
+  # Teams with Artifact Registries
+  # Teams that have google_artifact_registry_groups_memberships defined in pt-logos
+  teams_with_artifact_registries = {
+    for team_key, team in module.helpers.teams :
+    team_key => {
+      registry_readers = [
+        "group:${team.identity_groups["registry-readers"].email}",
+        "serviceAccount:${module.kubernetes_projects[team_key].number}-compute@developer.gserviceaccount.com"
+      ]
+      registry_writers = [
+        "group:${team.identity_groups["registry-writers"].email}"
+      ]
+    }
+    if lookup(team, "google_artifact_registry_groups_memberships", null) != null
+  }
+
   # Team DNS Subdomains
   # Resolves the DNS subdomain for each team: uses dns_subdomain if set (e.g., "pneuma"),
   # otherwise derives it from the team key by stripping the org prefix (e.g., pt-pneuma → pneuma).
