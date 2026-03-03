@@ -34,7 +34,7 @@ locals {
           team_key   = team_key
         }
       ]
-    ]) : "${item.team_key}-${item.repository}" => item
+    ]) : item.repository => item
   }
 
   # osinfra.io DNS zone name and DNS name
