@@ -39,13 +39,13 @@ locals {
 
   # osinfra.io DNS zone name and DNS name
   # Constructs the environment-level public zone identifier (e.g., osinfra.io in prod, sb.osinfra.io in sandbox)
-  osinfra_io_dns_dns_name = module.helpers.env == "prod" ? "osinfra.io." : "${module.helpers.env}.osinfra.io."
-  osinfra_io_dns_name     = module.helpers.env == "prod" ? "osinfra-io" : "${module.helpers.env}-osinfra-io"
+  osinfra_io_dns_name      = module.helpers.env == "prod" ? "osinfra-io" : "${module.helpers.env}-osinfra-io"
+  osinfra_io_dns_zone_name = module.helpers.env == "prod" ? "osinfra.io." : "${module.helpers.env}.osinfra.io."
 
   # Private DNS zone name and DNS name
   # Used by the private DNS module to construct environment-specific zone identifiers
-  private_dns_dns_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "${module.helpers.env}.gcp.priv.osinfra.io."
-  private_dns_name     = module.helpers.env == "prod" ? "priv-gcp-osinfra-io" : "${module.helpers.env}-gcp-priv-osinfra-io"
+  private_dns_name      = module.helpers.env == "prod" ? "priv-gcp-osinfra-io" : "gcp-priv-${module.helpers.env}-osinfra-io"
+  private_dns_zone_name = module.helpers.env == "prod" ? "priv.gcp.osinfra.io." : "gcp.priv.${module.helpers.env}.osinfra.io."
 
   # Regional subnets
   # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers

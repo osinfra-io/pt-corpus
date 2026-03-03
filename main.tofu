@@ -83,7 +83,7 @@ module "kubernetes_projects" {
 module "osinfra_io_dns" {
   source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
-  dns_name   = local.osinfra_io_dns_dns_name
+  dns_name   = local.osinfra_io_dns_zone_name
   labels     = module.helpers.labels
   name       = local.osinfra_io_dns_name
   project    = module.project.id
@@ -93,7 +93,7 @@ module "osinfra_io_dns" {
 module "private_dns" {
   source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
-  dns_name = local.private_dns_dns_name
+  dns_name = local.private_dns_zone_name
   labels   = module.helpers.labels
   name     = local.private_dns_name
 
