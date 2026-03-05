@@ -97,14 +97,14 @@ locals {
   }
 
   # Team subnets
-  # Aggregate subnet configurations from all teams in helpers module, preserving team association
+  # Extract subnet configurations from cluster definitions in all teams, preserving team association
   team_subnets = merge([
     for team_key, team in module.helpers.teams :
     {
-      for region, subnets in lookup(team, "google_subnets", {}) :
+      for region, clusters in lookup(team, "google_kubernetes_engine_clusters", {}) :
       region => {
-        for subnet_key, subnet in subnets :
-        subnet_key => merge(subnet, {
+        for cluster_key, cluster in clusters :
+        cluster_key => merge(lookup(cluster, "subnet", {}), {
           team_key = team_key
         })
       }
@@ -129,10 +129,12 @@ locals {
     for team_key, team in module.helpers.teams :
     team_key => merge(team, {
       # Check if any cluster in this team has enable_gke_hub_host = true
-      has_gke_hub_host = anytrue([
-        for cluster_key, cluster in lookup(team, "google_kubernetes_engine_clusters", {}) :
-        lookup(cluster, "enable_gke_hub_host", false)
-      ])
+      has_gke_hub_host = anytrue(flatten([
+        for region, clusters in lookup(team, "google_kubernetes_engine_clusters", {}) : [
+          for cluster_key, cluster in clusters :
+          lookup(cluster, "enable_gke_hub_host", false)
+        ]
+      ]))
     })
     if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
   }
