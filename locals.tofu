@@ -12,17 +12,6 @@ locals {
   # Converts workspace environment (e.g., "non-production") to logos format (e.g., "Non-Production")
   environment_key = title(module.helpers.environment)
 
-  # Flattened subnets
-  # Transform regional subnet maps into flat map with region metadata
-  flattened_subnets = merge([
-    for region, subnets in local.team_subnets : {
-      for subnet_name, subnet in subnets :
-      subnet_name => merge(subnet, {
-        region = region
-      })
-    }
-  ]...)
-
   # GitHub Repositories
   # Create a map of repositories for workload identity bindings
   github_repositories = {
