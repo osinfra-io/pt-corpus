@@ -50,10 +50,13 @@ locals {
   # Regional subnets
   # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers
   regional_subnets = {
-    for region, subnets in local.team_subnets : region => {
-      for subnet_key, subnet in subnets : subnet_key => merge(subnet, {
+    for region in distinct([for k, v in local.team_subnets : v.region]) :
+    region => {
+      for subnet_key, subnet in local.team_subnets :
+      subnet_key => merge(subnet, {
         service_project_number = module.kubernetes_projects[subnet.team_key].number
       })
+      if subnet.region == region
     }
   }
 
@@ -94,17 +97,16 @@ locals {
   }
 
   # Team subnets
-  # Extract subnet configurations from cluster definitions in all teams, preserving team association
+  # Extract subnet configurations from cluster definitions in all teams, preserving team association.
+  # Keyed by derived cluster name ({team_key}-{location}).
+  # Region is extracted from the location key by stripping the zone suffix (e.g., us-east1-b → us-east1).
   team_subnets = merge([
-    for team_key, team in module.helpers.teams :
-    {
-      for region, clusters in team.google_kubernetes_engine_clusters != null ? team.google_kubernetes_engine_clusters : {} :
-      region => {
-        for cluster_key, cluster in clusters :
-        cluster_key => merge(lookup(cluster, "subnet", {}), {
-          team_key = team_key
-        })
-      }
+    for team_key, team in module.helpers.teams : {
+      for location, cluster in team.google_kubernetes_engine_clusters != null ? team.google_kubernetes_engine_clusters : {} :
+      "${team_key}-${location}" => merge(cluster.subnet, {
+        region   = regex("^(us-[a-z]+-[0-9]+)-[a-z]$", location)[0]
+        team_key = team_key
+      })
     }
   ]...)
 
@@ -126,12 +128,10 @@ locals {
     for team_key, team in module.helpers.teams :
     team_key => merge(team, {
       # Check if any cluster in this team has enable_gke_hub_host = true
-      has_gke_hub_host = anytrue(flatten([
-        for region, clusters in team.google_kubernetes_engine_clusters != null ? team.google_kubernetes_engine_clusters : {} : [
-          for cluster_key, cluster in clusters :
-          lookup(cluster, "enable_gke_hub_host", false)
-        ]
-      ]))
+      has_gke_hub_host = anytrue([
+        for location, cluster in team.google_kubernetes_engine_clusters != null ? team.google_kubernetes_engine_clusters : {} :
+        lookup(cluster, "enable_gke_hub_host", false)
+      ])
     })
     if team.google_kubernetes_engine_clusters != null && length(team.google_kubernetes_engine_clusters) > 0
   }
