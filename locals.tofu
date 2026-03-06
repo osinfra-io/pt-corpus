@@ -94,6 +94,7 @@ locals {
   team_dns_subdomains = {
     for team_key, team in module.helpers.teams :
     team_key => lookup(team, "dns_subdomain", replace(team_key, "/^[a-z]+-/", ""))
+    if contains(keys(module.kubernetes_projects), team_key)
   }
 
   # Team subnets
