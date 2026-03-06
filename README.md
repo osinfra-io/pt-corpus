@@ -17,6 +17,7 @@ The infrastructure automates the creation of:
 - **Private and Public DNS Zones** with configurable record sets per team
 - **Subnets** with GKE secondary ranges (pods and services) deployed per region
 - **Cloud NAT** for outbound internet access in each regional deployment
+- **Artifact Registry** with remote (Docker Hub proxy), standard, and virtual Docker repositories per team, with IAM bindings for image readers and writers
 - **Kubernetes Projects** (one per team with GKE clusters) with Datadog integration — GKE clusters are created by pt-pneuma
 - **Datadog Integration** with Cloud Security Posture Management (CSPM) and Security Command Center
 - **Team Infrastructure** using the logos foundational platform for consistent labeling and governance
@@ -69,6 +70,7 @@ The infrastructure creates:
 - **Private and Public DNS Zones** with automatic team zone delegation per environment
 - **Subnets** with GKE primary and secondary IP ranges deployed per region (us-east1, us-east4)
 - **Cloud NAT** for outbound connectivity in each regional deployment
+- **Artifact Registry** with remote (Docker Hub proxy), standard, and virtual Docker repositories per team, with IAM bindings for image readers and writers
 - **Kubernetes Projects** (one per team with GKE clusters) consuming Datadog integration — GKE clusters are created by pt-pneuma
 - **Shared VPC Service Project Attachments** linking Kubernetes projects to the host VPC
 - **Datadog Integration** with Cloud Security Posture Management (CSPM) and Security Command Center integration
@@ -107,11 +109,15 @@ graph LR
 
 ### Environment-Specific Configurations
 
-Environment configurations are stored in the `environments/` directory. The three root-level files cover the main workspace; regional jobs use these same files:
+Environment configurations are stored in the `environments/` directory. The root-level files are used by the main workspace:
 
 - **`sandbox.tfvars`** - Sandbox environment configuration
 - **`non-production.tfvars`** - Non-production environment configuration
 - **`production.tfvars`** - Production environment configuration
+
+Regional jobs run from the `regional/` working directory and use zone-specific files in `regional/environments/`:
+
+- **`{zone}-{env}.tfvars`** - One file per zone per environment (e.g., `us-east1-sandbox.tfvars`, `us-east4-production.tfvars`)
 
 ### Core Helpers Configuration
 
