@@ -12,17 +12,6 @@ locals {
   # Converts workspace environment (e.g., "non-production") to logos format (e.g., "Non-Production")
   environment_key = title(module.helpers.environment)
 
-  # Flattened subnets
-  # Transform regional subnet maps into flat map with region metadata
-  flattened_subnets = merge([
-    for region, subnets in local.team_subnets : {
-      for subnet_name, subnet in subnets :
-      subnet_name => merge(subnet, {
-        region = region
-      })
-    }
-  ]...)
-
   # GitHub Repositories
   # Create a map of repositories for workload identity bindings
   github_repositories = {
@@ -49,13 +38,14 @@ locals {
 
   # Regional subnets
   # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers
-  # Only includes subnets for teams that have a Kubernetes project
   regional_subnets = {
-    for region, subnets in local.team_subnets : region => {
-      for subnet_key, subnet in subnets : subnet_key => merge(subnet, {
+    for region in distinct([for k, v in local.team_subnets : v.region]) :
+    region => {
+      for subnet_key, subnet in local.team_subnets :
+      subnet_key => merge(subnet, {
         service_project_number = module.kubernetes_projects[subnet.team_key].number
       })
-      if contains(keys(module.kubernetes_projects), subnet.team_key)
+      if subnet.region == region
     }
   }
 
@@ -70,8 +60,7 @@ locals {
   }
 
   # Teams with Artifact Registries
-  # Teams that have registry-readers and registry-writers identity groups (created when
-  # google_artifact_registry_groups_memberships is defined in pt-logos)
+  # Teams that have kubernetes.artifact_registry_groups_memberships defined in pt-logos
   teams_with_artifact_registries = {
     for team_key, team in module.helpers.teams :
     team_key => {
@@ -84,8 +73,7 @@ locals {
       ]
     }
     if contains(keys(team.identity_groups), "registry-readers") &&
-    contains(keys(team.identity_groups), "registry-writers") &&
-    contains(keys(module.kubernetes_projects), team_key)
+    contains(keys(team.identity_groups), "registry-writers")
   }
 
   # Team DNS Subdomains
@@ -93,22 +81,21 @@ locals {
   # otherwise derives it from the team key by stripping the org prefix (e.g., pt-pneuma → pneuma).
   team_dns_subdomains = {
     for team_key, team in module.helpers.teams :
-    team_key => lookup(team, "dns_subdomain", replace(team_key, "/^[a-z]+-/", ""))
-    if contains(keys(module.kubernetes_projects), team_key)
+    team_key => team.dns_subdomain != null ? team.dns_subdomain : replace(team_key, "/^[a-z]+-/", "")
+    if team.google_kubernetes_engine_clusters != null && length(team.google_kubernetes_engine_clusters) > 0
   }
 
   # Team subnets
-  # Extract subnet configurations from cluster definitions in all teams, preserving team association
+  # Extract subnet configurations from cluster definitions in all teams, preserving team association.
+  # Keyed by derived cluster name ({team_key}-{location}).
+  # Region is extracted from the location key by stripping the zone suffix (e.g., us-east1-b → us-east1).
   team_subnets = merge([
-    for team_key, team in module.helpers.teams :
-    {
-      for region, clusters in lookup(team, "google_kubernetes_engine_clusters", {}) :
-      region => {
-        for cluster_key, cluster in clusters :
-        cluster_key => merge(lookup(cluster, "subnet", {}), {
-          team_key = team_key
-        })
-      }
+    for team_key, team in module.helpers.teams : {
+      for location, cluster in team.google_kubernetes_engine_clusters != null ? team.google_kubernetes_engine_clusters : {} :
+      "${team_key}-${location}" => merge(cluster.subnet, {
+        region   = regex("^(us-[a-z]+[0-9]+)-[a-z]$", location)[0]
+        team_key = team_key
+      })
     }
   ]...)
 
@@ -121,7 +108,7 @@ locals {
       dns_name = module.helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}.osinfra.io." : "${local.team_dns_subdomains[team_key]}.${module.helpers.env}.osinfra.io."
       name     = module.helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}-osinfra-io" : "${local.team_dns_subdomains[team_key]}-${module.helpers.env}-osinfra-io"
     }
-    if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
+    if team.google_kubernetes_engine_clusters != null && length(team.google_kubernetes_engine_clusters) > 0
   }
 
   # Teams with GKE Clusters
@@ -130,14 +117,12 @@ locals {
     for team_key, team in module.helpers.teams :
     team_key => merge(team, {
       # Check if any cluster in this team has enable_gke_hub_host = true
-      has_gke_hub_host = anytrue(flatten([
-        for region, clusters in lookup(team, "google_kubernetes_engine_clusters", {}) : [
-          for cluster_key, cluster in clusters :
-          lookup(cluster, "enable_gke_hub_host", false)
-        ]
-      ]))
+      has_gke_hub_host = anytrue([
+        for location, cluster in team.google_kubernetes_engine_clusters != null ? team.google_kubernetes_engine_clusters : {} :
+        lookup(cluster, "enable_gke_hub_host", false)
+      ])
     })
-    if length(lookup(team, "google_kubernetes_engine_clusters", {})) > 0
+    if team.google_kubernetes_engine_clusters != null && length(team.google_kubernetes_engine_clusters) > 0
   }
 
   # Teams with GKE Hub Host
