@@ -104,7 +104,7 @@ locals {
     for team_key, team in module.helpers.teams : {
       for location, cluster in team.google_kubernetes_engine_clusters != null ? team.google_kubernetes_engine_clusters : {} :
       "${team_key}-${location}" => merge(cluster.subnet, {
-        region   = regex("^(us-[a-z]+-[0-9]+)-[a-z]$", location)[0]
+        region   = regex("^(us-[a-z]+[0-9]+)-[a-z]$", location)[0]
         team_key = team_key
       })
     }
