@@ -18,7 +18,7 @@ permissions:
 jobs:
   main:
     name: "Main"
-    uses: osinfra-io/github-opentofu-gcp-called-workflows/.github/workflows/plan-and-apply.yml@e3c59e43f2458550c7f13b6369fb6978b6f42c6e # v0.2.9
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@b250b03d5f6bd13afc5df9bd76b1729e465b7730 # v0.3.0
     with:
       checkout_ref: ${{ github.ref }}
       github_environment: "Non-Production: Main"
@@ -36,7 +36,7 @@ jobs:
 
   us_east1:
     name: "Regional: us-east1"
-    uses: osinfra-io/github-opentofu-gcp-called-workflows/.github/workflows/plan-and-apply.yml@e3c59e43f2458550c7f13b6369fb6978b6f42c6e # v0.2.9
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@b250b03d5f6bd13afc5df9bd76b1729e465b7730 # v0.3.0
     needs: main
     with:
       checkout_ref: ${{ github.ref }}
@@ -52,7 +52,7 @@ jobs:
 
   us_east4:
     name: "Regional: us-east4"
-    uses: osinfra-io/github-opentofu-gcp-called-workflows/.github/workflows/plan-and-apply.yml@e3c59e43f2458550c7f13b6369fb6978b6f42c6e # v0.2.9
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@b250b03d5f6bd13afc5df9bd76b1729e465b7730 # v0.3.0
     needs: main
     with:
       checkout_ref: ${{ github.ref }}

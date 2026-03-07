@@ -43,7 +43,7 @@ This ensures:
 
 ## GitHub Actions
 
-- All OpenTofu deployments are handled through GitHub Actions workflows using a reusable called workflow (osinfra-io/github-opentofu-gcp-called-workflows).
+- All OpenTofu deployments are handled through GitHub Actions workflows using a reusable called workflow (osinfra-io/pt-techne-opentofu-workflows).
 - There are two types of workflows:
   - Workflows that run directly on push to main (production only).
   - Workflows that run on PR creation and subsequent commits (sandbox environment), then automatically progress to non-production after merge to main, and finally production after non-production completes successfully.
