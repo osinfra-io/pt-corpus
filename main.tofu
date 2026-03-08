@@ -1,8 +1,8 @@
 # Datadog Google Cloud Platform Integration Module (osinfra.io)
-# https://github.com/osinfra-io/opentofu-datadog-google-integration
+# https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "datadog" {
-  source = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=76c7e1b08c3705820050bca0c7dd5da2f9350692" # v0.4.0
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=76c7e1b08c3705820050bca0c7dd5da2f9350692" # v0.4.0
 
   lifecycle {
     enabled = var.datadog_enable
@@ -16,11 +16,11 @@ module "datadog" {
 }
 
 # Datadog Google Cloud Platform Integration for Kubernetes Projects
-# https://github.com/osinfra-io/opentofu-datadog-google-integration
+# https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "kubernetes_datadog" {
   for_each = var.datadog_enable ? local.teams_with_gke_clusters : {}
-  source   = "github.com/osinfra-io/opentofu-datadog-google-integration?ref=76c7e1b08c3705820050bca0c7dd5da2f9350692" # v0.4.0
+  source   = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=76c7e1b08c3705820050bca0c7dd5da2f9350692" # v0.4.0
 
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true
@@ -115,12 +115,12 @@ resource "google_artifact_registry_repository_iam_binding" "docker_virtual_reade
 }
 
 # Google Kubernetes Project Module (osinfra.io)
-# https://github.com/osinfra-io/opentofu-google-project
+# https://github.com/osinfra-io/pt-arche-google-project
 # Create Kubernetes projects for teams with google_kubernetes_engine_clusters
 
 module "kubernetes_projects" {
   for_each = local.teams_with_gke_clusters
-  source   = "github.com/osinfra-io/opentofu-google-project?ref=0108cf1150904e098f41206c7860f7889159d184" # v0.6.6
+  source   = "github.com/osinfra-io/pt-arche-google-project?ref=0108cf1150904e098f41206c7860f7889159d184" # v0.6.6
 
   billing_account                 = var.project_billing_account
   cis_2_2_logging_sink_project_id = module.project.id
@@ -164,10 +164,10 @@ module "kubernetes_projects" {
 }
 
 # Google Cloud DNS Module (osinfra.io)
-# https://github.com/osinfra-io/opentofu-google-network
+# https://github.com/osinfra-io/pt-arche-google-network
 
 module "osinfra_io_dns" {
-  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
   dns_name   = local.osinfra_io_dns_zone_name
   labels     = module.helpers.labels
@@ -177,7 +177,7 @@ module "osinfra_io_dns" {
 }
 
 module "private_dns" {
-  source = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
   dns_name = local.private_dns_zone_name
   labels   = module.helpers.labels
@@ -192,10 +192,10 @@ module "private_dns" {
 }
 
 # Google Project Module (osinfra.io)
-# https://github.com/osinfra-io/opentofu-google-project
+# https://github.com/osinfra-io/pt-arche-google-project
 
 module "project" {
-  source = "github.com/osinfra-io/opentofu-google-project?ref=0108cf1150904e098f41206c7860f7889159d184" # v0.6.6
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=0108cf1150904e098f41206c7860f7889159d184" # v0.6.6
 
   billing_account       = var.project_billing_account
   deletion_policy       = "DELETE"
@@ -242,11 +242,11 @@ module "project" {
 # or with regional module invocations that include proper helpers configuration
 
 # Google Storage Bucket Module (osinfra.io)
-# https://github.com/osinfra-io/opentofu-google-storage-bucket
+# https://github.com/osinfra-io/pt-arche-google-storage-bucket
 
 module "state_storage_bucket" {
   for_each = local.service_accounts
-  source   = "github.com/osinfra-io/opentofu-google-storage-bucket?ref=cda73f8aeda34008171c1a0ebe5fb4d2394f071e" # v0.3.0
+  source   = "github.com/osinfra-io/pt-arche-google-storage-bucket?ref=cda73f8aeda34008171c1a0ebe5fb4d2394f071e" # v0.3.0
 
   labels   = module.helpers.labels
   location = "us"
@@ -256,7 +256,7 @@ module "state_storage_bucket" {
 
 module "team_dns" {
   for_each = local.teams_with_dns_zones
-  source   = "github.com/osinfra-io/opentofu-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
+  source   = "github.com/osinfra-io/pt-arche-google-network//dns?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
   dns_name = each.value.dns_name
 
@@ -276,7 +276,7 @@ module "team_dns" {
 # https://github.com/osinfra-io/opentofu-google-vpc
 
 module "vpc" {
-  source = "github.com/osinfra-io/opentofu-google-network?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
+  source = "github.com/osinfra-io/pt-arche-google-network?ref=6efe0453acde9009d5a815487bde19573143307a" # v0.3.1
 
   name       = "standard-shared"
   project    = module.project.id
