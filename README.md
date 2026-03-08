@@ -245,7 +245,7 @@ graph LR
 
 This configuration leverages the following infrastructure modules:
 
-### [opentofu-google-project](https://github.com/osinfra-io/opentofu-google-project)
+### [pt-arche-google-project](https://github.com/osinfra-io/pt-arche-google-project)
 
 Provides Google Cloud project creation with:
 
@@ -254,7 +254,7 @@ Provides Google Cloud project creation with:
 - Required API enablement
 - Standardized project configuration
 
-### [opentofu-datadog-google-integration](https://github.com/osinfra-io/opentofu-datadog-google-integration)
+### [pt-arche-datadog-google-integration](https://github.com/osinfra-io/pt-arche-datadog-google-integration)
 
 Provides Datadog integration with:
 
@@ -263,7 +263,7 @@ Provides Datadog integration with:
 - Automated monitoring setup
 - Compliance and security visibility
 
-### [opentofu-google-storage-bucket](https://github.com/osinfra-io/opentofu-google-storage-bucket)
+### [pt-arche-google-storage-bucket](https://github.com/osinfra-io/pt-arche-google-storage-bucket)
 
 Provides encrypted GCS bucket creation with:
 
@@ -272,7 +272,7 @@ Provides encrypted GCS bucket creation with:
 - Consistent labeling and naming
 - Multi-environment support
 
-### [opentofu-core-helpers](https://github.com/osinfra-io/opentofu-core-helpers)
+### [pt-arche-core-helpers](https://github.com/osinfra-io/pt-arche-core-helpers)
 
 Provides foundational platform capabilities:
 
@@ -281,7 +281,7 @@ Provides foundational platform capabilities:
 - Environment detection and naming
 - Cross-workspace data sharing
 
-### [opentofu-google-network](https://github.com/osinfra-io/opentofu-google-network)
+### [pt-arche-google-network](https://github.com/osinfra-io/pt-arche-google-network)
 
 Provides Google Cloud networking infrastructure with:
 
