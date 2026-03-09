@@ -22,6 +22,7 @@ locals {
           repository = repo_key
           team_key   = team_key
         }
+        if repo.enable_google_wif_service_account
       ]
     ]) : item.repository => item
   }
