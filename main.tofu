@@ -120,7 +120,7 @@ resource "google_artifact_registry_repository_iam_binding" "docker_virtual_reade
 
 module "kubernetes_projects" {
   for_each = local.teams_with_gke_clusters
-  source   = "github.com/osinfra-io/pt-arche-google-project?ref=d51e04061b1a0f73ea56252cdc58eed01fb17e8e" # v0.6.7
+  source   = "github.com/osinfra-io/pt-arche-google-project?ref=39a041123cc3154c651e47c6aa69c2ead4c4577b" # v0.6.7
 
   billing_account                 = var.project_billing_account
   cis_2_2_logging_sink_project_id = module.project.id
@@ -167,7 +167,7 @@ module "kubernetes_projects" {
 # https://github.com/osinfra-io/pt-arche-google-network
 
 module "osinfra_io_dns" {
-  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=53373138d4fb622bd51cb23e0ef8972678bcb2c2" # v0.3.2
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=997d35aa6b0c0d122a87282b096220c87d3795d0" # v0.3.2
 
   dns_name   = local.osinfra_io_dns_zone_name
   labels     = module.helpers.labels
@@ -177,7 +177,7 @@ module "osinfra_io_dns" {
 }
 
 module "private_dns" {
-  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=53373138d4fb622bd51cb23e0ef8972678bcb2c2" # v0.3.2
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=997d35aa6b0c0d122a87282b096220c87d3795d0" # v0.3.2
 
   dns_name = local.private_dns_zone_name
   labels   = module.helpers.labels
@@ -195,7 +195,7 @@ module "private_dns" {
 # https://github.com/osinfra-io/pt-arche-google-project
 
 module "project" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=d51e04061b1a0f73ea56252cdc58eed01fb17e8e" # v0.6.7
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=39a041123cc3154c651e47c6aa69c2ead4c4577b" # v0.6.7
 
   billing_account       = var.project_billing_account
   deletion_policy       = "DELETE"
@@ -256,7 +256,7 @@ module "state_storage_bucket" {
 
 module "team_dns" {
   for_each = local.teams_with_dns_zones
-  source   = "github.com/osinfra-io/pt-arche-google-network//dns?ref=53373138d4fb622bd51cb23e0ef8972678bcb2c2" # v0.3.2
+  source   = "github.com/osinfra-io/pt-arche-google-network//dns?ref=997d35aa6b0c0d122a87282b096220c87d3795d0" # v0.3.2
 
   dns_name = each.value.dns_name
 
@@ -276,7 +276,7 @@ module "team_dns" {
 # https://github.com/osinfra-io/opentofu-google-vpc
 
 module "vpc" {
-  source = "github.com/osinfra-io/pt-arche-google-network?ref=53373138d4fb622bd51cb23e0ef8972678bcb2c2" # v0.3.2
+  source = "github.com/osinfra-io/pt-arche-google-network?ref=997d35aa6b0c0d122a87282b096220c87d3795d0" # v0.3.2
 
   name       = "standard-shared"
   project    = module.project.id
