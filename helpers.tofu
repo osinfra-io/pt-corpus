@@ -8,7 +8,14 @@ module "helpers" {
   data_classification = "public"
 
   # Logos functionality - consolidated into core-helpers
-  logos_workspaces = ["pt-corpus-main-production", "pt-logos-main-production", "pt-pneuma-main-production"]
+  logos_workspaces = [
+    "pt-arche-main-production",
+    "pt-corpus-main-production",
+    "pt-ekklesia-main-production",
+    "pt-logos-main-production",
+    "pt-pneuma-main-production",
+    "pt-techne-main-production"
+  ]
 
   repository = "pt-corpus"
   team       = "pt-corpus"
