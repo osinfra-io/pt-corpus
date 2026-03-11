@@ -24,7 +24,16 @@ locals {
         }
         if repo.enable_google_wif_service_account
       ]
+      if team.enable_workflows
     ]) : item.repository => item
+  }
+
+  # OpenTofu State Management
+  # Create a map of teams that need OpenTofu state management infrastructure (state bucket, KMS, storage IAM)
+  opentofu_state_management = {
+    for team_key, team in module.helpers.teams :
+    team_key => {}
+    if team.enable_opentofu_state_management && team.enable_workflows
   }
 
   # osinfra.io DNS zone name and DNS name
@@ -51,13 +60,13 @@ locals {
   }
 
   # Service Accounts
-  # Create service accounts based on teams that have GitHub repositories
+  # Create service accounts based on teams that have workflows enabled
   service_accounts = {
     for team_key, team in module.helpers.teams :
     team_key => {
       github_repositories = team.github_repositories
     }
-    if length(team.github_repositories) > 0
+    if team.enable_workflows
   }
 
   # Teams with Artifact Registries
@@ -74,7 +83,8 @@ locals {
       ]
     }
     if contains(keys(team.identity_groups), "registry-readers") &&
-    contains(keys(team.identity_groups), "registry-writers")
+    contains(keys(team.identity_groups), "registry-writers") &&
+    team.enable_workflows
   }
 
   # Team DNS Subdomains
