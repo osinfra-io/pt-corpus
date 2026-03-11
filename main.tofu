@@ -245,7 +245,7 @@ module "project" {
 # https://github.com/osinfra-io/pt-arche-google-storage-bucket
 
 module "state_storage_bucket" {
-  for_each = local.service_accounts
+  for_each = local.opentofu_state_management
   source   = "github.com/osinfra-io/pt-arche-google-storage-bucket?ref=4767539fa395255ecb9c814c010938ef2878fc6e" # v0.3.1
 
   labels   = module.helpers.labels
@@ -472,7 +472,7 @@ resource "google_kms_crypto_key_iam_member" "cloud_storage_service_account" {
 }
 
 resource "google_kms_crypto_key_iam_member" "github_actions" {
-  for_each = local.service_accounts
+  for_each = local.opentofu_state_management
 
   crypto_key_id = google_kms_crypto_key.state_encryption.id
   member        = "serviceAccount:${google_service_account.github_actions[each.key].email}"
@@ -593,7 +593,7 @@ resource "google_service_networking_connection" "this" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/storage_bucket_iam#google_storage_bucket_iam_member
 
 resource "google_storage_bucket_iam_member" "github_actions" {
-  for_each = local.service_accounts
+  for_each = local.opentofu_state_management
 
   bucket = module.state_storage_bucket[each.key].name
   member = "serviceAccount:${google_service_account.github_actions[each.key].email}"
