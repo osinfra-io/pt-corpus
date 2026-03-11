@@ -520,7 +520,7 @@ resource "google_project_iam_member" "container_engine_service_agent_user" {
 # Teams with Kubernetes clusters need to manage DNS records for their Istio gateways
 
 resource "google_project_iam_member" "dns_records_admins_gke_teams" {
-  for_each = local.teams_with_gke_clusters
+  for_each = { for k, v in local.teams_with_gke_clusters : k => v if contains(keys(local.service_accounts), k) }
 
   member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
   project = module.project.id
@@ -528,7 +528,7 @@ resource "google_project_iam_member" "dns_records_admins_gke_teams" {
 }
 
 resource "google_project_iam_member" "kubernetes_project_owners" {
-  for_each = local.teams_with_gke_clusters
+  for_each = { for k, v in local.teams_with_gke_clusters : k => v if contains(keys(local.service_accounts), k) }
 
   member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
   project = module.kubernetes_projects[each.key].id
