@@ -331,6 +331,25 @@ resource "google_cloud_identity_group_membership" "github_actions" {
   }
 }
 
+# Logos state readers group membership - allows service accounts to read Logos OpenTofu state
+# so all teams can use pt-arche-core-helpers root module for team data
+resource "google_cloud_identity_group_membership" "logos_state_readers" {
+  depends_on = [
+    module.project
+  ]
+
+  for_each = local.service_accounts
+
+  create_ignore_already_exists = true
+  group                        = local.logos_state_readers_group_name
+
+  preferred_member_key {
+    id = google_service_account.github_actions[each.key].email
+  }
+
+  roles { name = "MEMBER" }
+}
+
 # Registry writers group membership - adds each team's GitHub Actions SA as a member of the
 # registry-writers group so release workflows can push images to Artifact Registry
 resource "google_cloud_identity_group_membership" "registry_writers" {
@@ -598,4 +617,10 @@ resource "google_storage_bucket_iam_member" "github_actions" {
   bucket = module.state_storage_bucket[each.key].name
   member = "serviceAccount:${google_service_account.github_actions[each.key].email}"
   role   = "roles/storage.objectAdmin"
+}
+
+resource "google_storage_bucket_iam_member" "logos_state_readers" {
+  bucket = module.state_storage_bucket["pt-logos"].name
+  member = "group:${module.helpers.teams["pt-logos"].identity_groups["state-readers"].email}"
+  role   = "roles/storage.objectViewer"
 }
