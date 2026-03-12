@@ -585,6 +585,20 @@ resource "google_project_iam_member" "dns_records_admins_gke_teams" {
   role    = "organizations/163313809793/roles/dns.recordsAdmin"
 }
 
+# Google Project Owners
+# Grant team service accounts owner role on their google_projects
+
+resource "google_project_iam_member" "google_project_owners" {
+  for_each = { for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), v.team_key) }
+
+  member  = "serviceAccount:${google_service_account.github_actions[each.value.team_key].email}"
+  project = module.google_projects[each.key].id
+  role    = "roles/owner"
+}
+
+# Kubernetes Project Owners
+# Grant team service accounts owner role on their kubernetes_projects
+
 resource "google_project_iam_member" "kubernetes_project_owners" {
   for_each = { for k, v in local.teams_with_gke_clusters : k => v if contains(keys(local.service_accounts), k) }
 
