@@ -12,6 +12,9 @@ locals {
   # Converts workspace environment (e.g., "non-production") to logos format (e.g., "Non-Production")
   environment_key = title(module.helpers.environment)
 
+  # Logos state readers group - centrally managed in pt-logos, referenced here for membership management
+  logos_state_readers_group_name = module.helpers.teams["pt-logos"].identity_groups["state-readers"].name
+
   # GitHub Repositories
   # Create a map of repositories for workload identity bindings
   github_repositories = {
