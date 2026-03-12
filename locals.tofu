@@ -31,6 +31,21 @@ locals {
     ]) : item.repository => item
   }
 
+  # Google Projects
+  # Flatten team google_projects into a map keyed by "{team_key}-{description}" for project creation
+  google_projects = {
+    for item in flatten([
+      for team_key, team in module.helpers.teams : [
+        for description, project in team.google_projects : {
+          description = description
+          services    = project.services
+          team_key    = team_key
+        }
+      ]
+      if team.enable_workflows
+    ]) : "${item.team_key}-${item.description}" => item
+  }
+
   # OpenTofu State Management
   # Create a map of teams that need OpenTofu state management infrastructure (state bucket, KMS, storage IAM)
   opentofu_state_management = {

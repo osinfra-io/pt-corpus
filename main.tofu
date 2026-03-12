@@ -15,6 +15,31 @@ module "datadog" {
   project                            = module.project.id
 }
 
+# Google Project Module (osinfra.io)
+# https://github.com/osinfra-io/pt-arche-google-project
+
+module "google_projects" {
+  for_each = local.google_projects
+  source   = "github.com/osinfra-io/pt-arche-google-project?ref=39a041123cc3154c651e47c6aa69c2ead4c4577b" # v0.6.7
+
+  billing_account                 = var.project_billing_account
+  cis_2_2_logging_sink_project_id = module.project.id
+  deletion_policy                 = "DELETE"
+  description                     = each.value.description
+  folder_id                       = module.helpers.teams[each.value.team_key].environments[local.environment_key]
+
+  labels = merge(
+    module.helpers.labels,
+    {
+      team = each.value.team_key
+    }
+  )
+
+  monthly_budget_amount = var.project_monthly_budget_amount
+  prefix                = each.value.team_key
+  services              = each.value.services
+}
+
 # Datadog Google Cloud Platform Integration for Kubernetes Projects
 # https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
@@ -338,7 +363,7 @@ resource "google_cloud_identity_group_membership" "logos_state_readers" {
     module.project
   ]
 
-  for_each = local.service_accounts
+  for_each = { for k, v in local.service_accounts : k => v if k != "pt-corpus" }
 
   create_ignore_already_exists = true
   group                        = local.logos_state_readers_group_name
@@ -551,6 +576,20 @@ resource "google_project_iam_member" "dns_records_admins_gke_teams" {
   project = module.project.id
   role    = "organizations/163313809793/roles/dns.recordsAdmin"
 }
+
+# Google Project Owners
+# Grant team service accounts owner role on their google_projects
+
+resource "google_project_iam_member" "google_project_owners" {
+  for_each = { for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), v.team_key) }
+
+  member  = "serviceAccount:${google_service_account.github_actions[each.value.team_key].email}"
+  project = module.google_projects[each.key].id
+  role    = "roles/owner"
+}
+
+# Kubernetes Project Owners
+# Grant team service accounts owner role on their kubernetes_projects
 
 resource "google_project_iam_member" "kubernetes_project_owners" {
   for_each = { for k, v in local.teams_with_gke_clusters : k => v if contains(keys(local.service_accounts), k) }
