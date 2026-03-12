@@ -363,7 +363,7 @@ resource "google_cloud_identity_group_membership" "logos_state_readers" {
     module.project
   ]
 
-  for_each = local.service_accounts
+  for_each = { for k, v in local.service_accounts : k => v if k != "pt-corpus" }
 
   create_ignore_already_exists = true
   group                        = local.logos_state_readers_group_name
@@ -373,14 +373,6 @@ resource "google_cloud_identity_group_membership" "logos_state_readers" {
   }
 
   roles { name = "MEMBER" }
-
-  dynamic "roles" {
-    for_each = each.key == "pt-corpus" ? [1] : []
-
-    content {
-      name = "MANAGER"
-    }
-  }
 }
 
 # Registry writers group membership - adds each team's GitHub Actions SA as a member of the
