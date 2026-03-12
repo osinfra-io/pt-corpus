@@ -498,6 +498,12 @@ resource "google_kms_crypto_key_iam_member" "github_actions" {
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 }
 
+resource "google_kms_crypto_key_iam_member" "logos_state_readers" {
+  crypto_key_id = google_kms_crypto_key.state_encryption.id
+  member        = "group:${module.helpers.teams["pt-logos"].identity_groups["state-readers"].email}"
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+}
+
 # Google KMS Key Ring Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_key_ring
 
