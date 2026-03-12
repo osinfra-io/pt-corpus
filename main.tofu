@@ -373,6 +373,14 @@ resource "google_cloud_identity_group_membership" "logos_state_readers" {
   }
 
   roles { name = "MEMBER" }
+
+  dynamic "roles" {
+    for_each = each.key == "pt-corpus" ? [1] : []
+
+    content {
+      name = "MANAGER"
+    }
+  }
 }
 
 # Registry writers group membership - adds each team's GitHub Actions SA as a member of the
