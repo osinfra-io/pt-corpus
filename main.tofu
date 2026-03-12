@@ -15,6 +15,31 @@ module "datadog" {
   project                            = module.project.id
 }
 
+# Google Project Module (osinfra.io)
+# https://github.com/osinfra-io/pt-arche-google-project
+
+module "google_projects" {
+  for_each = local.google_projects
+  source   = "github.com/osinfra-io/pt-arche-google-project?ref=39a041123cc3154c651e47c6aa69c2ead4c4577b" # v0.6.7
+
+  billing_account                 = var.project_billing_account
+  cis_2_2_logging_sink_project_id = module.project.id
+  deletion_policy                 = "DELETE"
+  description                     = each.value.description
+  folder_id                       = module.helpers.teams[each.value.team_key].environments[local.environment_key]
+
+  labels = merge(
+    module.helpers.labels,
+    {
+      team = each.value.team_key
+    }
+  )
+
+  monthly_budget_amount = var.project_monthly_budget_amount
+  prefix                = each.value.team_key
+  services              = each.value.services
+}
+
 # Datadog Google Cloud Platform Integration for Kubernetes Projects
 # https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
