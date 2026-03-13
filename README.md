@@ -1,6 +1,6 @@
 # Corpus
 
-[![Dependabot](https://img.shields.io/github/actions/workflow/status/osinfra-io/pt-corpus/dependabot.yml?style=for-the-badge&logo=github&color=2088FF&label=Dependabot)](https://github.com/osinfra-io/pt-corpus/actions/workflows/dependabot.yml)
+[![Dependabot](https://img.shields.io/github/actions/workflow/status/osinfra-io/pt-corpus/dependabot.yml?style=for-the-badge&logo=github&color=2088FF&label=Dependabot)](https://github.com/osinfra-io/pt-corpus/actions/workflows/dependabot.yml) [![Datadog Security Enabled](https://img.shields.io/badge/Datadog%20Security-Enabled-632CA6?style=for-the-badge&logo=datadog)](https://app.datadoghq.com/security/code-security/repositories?repository_id=pt-corpus)
 
 ## 📄 Repository Description
 
@@ -33,7 +33,7 @@ This establishes team-specific infrastructure while maintaining consistency with
 - Documentation: [docs.osinfra.io](https://docs.osinfra.io/product-guides/google-cloud-platform/corpus)
 - Service Interfaces: [github.com](https://github.com/osinfra-io/pt-corpus/issues/new/choose)
 
-## <img align="left" width="35" height="35" src="https://github.com/osinfra-io/github-organization-management/assets/1610100/39d6ae3b-ccc2-42db-92f1-276a5bc54e65"> Development
+## <img align="left" width="35" height="35" src="https://github.com/user-attachments/assets/eb98a3be-2ffe-4c05-91a4-072fe795a167"> Development
 
 Our focus is on the core fundamental practice of platform engineering, Infrastructure as Code.
 
@@ -81,17 +81,6 @@ The infrastructure creates:
 - **Multi-environment Support** with configurations for sandbox, non-production, and production deployments
 
 ## GitHub Actions Workflow
-
-```mermaid
-graph LR
-    B[Main]
-    B --> C[Regional: us-east1]
-    B --> D[Regional: us-east4]
-
-    style B fill:#fff4e6,color:#000
-    style C fill:#d4edda,color:#000
-    style D fill:#d4edda,color:#000
-```
 
 **Workflow Details:**
 
@@ -211,29 +200,6 @@ These outputs provide downstream repositories with comprehensive infrastructure 
 ## DNS Delegation
 
 Corpus manages a three-tier DNS delegation hierarchy rooted at `osinfra.io`. Each environment gets its own zone, and team zones (created only for teams with GKE clusters) are automatically delegated into the appropriate environment zone.
-
-```mermaid
-graph LR
-    A["osinfra.io\n(prod)"]
-    B["sb.osinfra.io\n(sandbox)"]
-    C["nonprod.osinfra.io\n(non-production)"]
-    D["pneuma.osinfra.io\n(prod team zone)"]
-    E["pneuma.sb.osinfra.io\n(sandbox team zone)"]
-    F["pneuma.nonprod.osinfra.io\n(nonprod team zone)"]
-
-    A -->|NS delegation\nosinfra_io_ns_delegations| B
-    A -->|NS delegation\nosinfra_io_ns_delegations| C
-    A -->|NS delegation\nteam_ns_delegation| D
-    B -->|NS delegation\nteam_ns_delegation| E
-    C -->|NS delegation\nteam_ns_delegation| F
-
-    style A fill:#fff4e6,color:#000
-    style B fill:#d4edda,color:#000
-    style C fill:#d1ecf1,color:#000
-    style D fill:#fff4e6,color:#000
-    style E fill:#d4edda,color:#000
-    style F fill:#d1ecf1,color:#000
-```
 
 **How it works:**
 
