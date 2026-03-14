@@ -8,6 +8,10 @@ on:
     paths-ignore:
       - "**.md"
 
+concurrency:
+  group: non-production
+  cancel-in-progress: false
+
 # For reusable workflows, the permissions setting for id-token should be set to write at the
 # caller workflow level or in the specific job that calls the reusable workflow.
 
@@ -18,7 +22,8 @@ permissions:
 jobs:
   main:
     name: "Main"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@b250b03d5f6bd13afc5df9bd76b1729e465b7730 # v0.3.0
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5e0e5ea22c629ef678da26c0cecf640f56c15653 # v0.3.1
+    if: github.event.head_commit.author.username != 'dependabot[bot]'
     with:
       checkout_ref: ${{ github.ref }}
       github_environment: "Non-Production: Main"
@@ -36,7 +41,7 @@ jobs:
 
   us_east1:
     name: "Regional: us-east1"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@b250b03d5f6bd13afc5df9bd76b1729e465b7730 # v0.3.0
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5e0e5ea22c629ef678da26c0cecf640f56c15653 # v0.3.1
     needs: main
     with:
       checkout_ref: ${{ github.ref }}
@@ -52,7 +57,7 @@ jobs:
 
   us_east4:
     name: "Regional: us-east4"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@b250b03d5f6bd13afc5df9bd76b1729e465b7730 # v0.3.0
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5e0e5ea22c629ef678da26c0cecf640f56c15653 # v0.3.1
     needs: main
     with:
       checkout_ref: ${{ github.ref }}

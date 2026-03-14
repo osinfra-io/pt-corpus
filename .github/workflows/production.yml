@@ -8,6 +8,12 @@ on:
       - Non-Production
     types:
       - completed
+    branches:
+      - main
+
+concurrency:
+  group: production
+  cancel-in-progress: false
 
 # For reusable workflows, the permissions setting for id-token should be set to write at the
 # caller workflow level or in the specific job that calls the reusable workflow.
@@ -19,10 +25,13 @@ permissions:
 jobs:
   main:
     name: "Main"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@b250b03d5f6bd13afc5df9bd76b1729e465b7730 # v0.3.0
-    if: github.event.workflow_run.conclusion == 'success'
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5e0e5ea22c629ef678da26c0cecf640f56c15653 # v0.3.1
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_commit.author.name != 'dependabot[bot]')
     with:
-      checkout_ref: ${{ github.ref }}
+      checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       github_environment: "Production: Main"
       service_account: pt-corpus-github@pt-corpus-tf16-prod.iam.gserviceaccount.com
       opentofu_kms_encryption_key: projects/pt-corpus-tf16-prod/locations/us/keyRings/state-encryption/cryptoKeys/default
@@ -38,11 +47,10 @@ jobs:
 
   us_east1:
     name: "Regional: us-east1"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@b250b03d5f6bd13afc5df9bd76b1729e465b7730 # v0.3.0
-    if: github.event.workflow_run.conclusion == 'success'
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5e0e5ea22c629ef678da26c0cecf640f56c15653 # v0.3.1
     needs: main
     with:
-      checkout_ref: ${{ github.ref }}
+      checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       github_environment: "Production: Regional - us-east1"
       service_account: pt-corpus-github@pt-corpus-tf16-prod.iam.gserviceaccount.com
       opentofu_kms_encryption_key: projects/pt-corpus-tf16-prod/locations/us/keyRings/state-encryption/cryptoKeys/default
@@ -55,11 +63,10 @@ jobs:
 
   us_east4:
     name: "Regional: us-east4"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@b250b03d5f6bd13afc5df9bd76b1729e465b7730 # v0.3.0
-    if: github.event.workflow_run.conclusion == 'success'
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5e0e5ea22c629ef678da26c0cecf640f56c15653 # v0.3.1
     needs: main
     with:
-      checkout_ref: ${{ github.ref }}
+      checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       github_environment: "Production: Regional - us-east4"
       service_account: pt-corpus-github@pt-corpus-tf16-prod.iam.gserviceaccount.com
       opentofu_kms_encryption_key: projects/pt-corpus-tf16-prod/locations/us/keyRings/state-encryption/cryptoKeys/default
