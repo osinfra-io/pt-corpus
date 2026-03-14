@@ -162,6 +162,26 @@ locals {
     if team.has_gke_hub_host
   }
 
+  # GKE Cross-Cluster Firewall Rules
+  # For each team with a GKE Hub host and multiple clusters, collect all pod CIDRs to allow
+  # cross-cluster pod-to-pod traffic. GKE manages intra-cluster pod traffic automatically,
+  # but cross-cluster pod CIDRs must be explicitly allowed in the shared VPC host project.
+  gke_cross_cluster_firewall_rules = {
+    for team_key in keys(local.teams_with_gke_hub_host) :
+    team_key => {
+      source_ranges = [
+        for cluster_name, subnet in local.team_subnets :
+        subnet.pod_ip_cidr_range
+        if subnet.team_key == team_key
+      ]
+    }
+    if length([
+      for cluster_name, subnet in local.team_subnets :
+      1
+      if subnet.team_key == team_key
+    ]) > 1
+  }
+
   # VPC Service Projects
   # Automatically include all Kubernetes projects as VPC service projects
   # Merges manually configured service projects with Kubernetes projects

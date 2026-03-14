@@ -620,6 +620,28 @@ resource "google_project_iam_member" "multi_cluster_service_agent" {
   role    = "roles/multiclusterservicediscovery.serviceAgent"
 }
 
+# GKE Cross-Cluster Pod Firewall Rules
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_firewall
+# Allow pod-to-pod traffic across clusters within the same fleet. GKE creates per-cluster
+# firewall rules for intra-cluster pod traffic, but cross-cluster pod CIDRs require explicit
+# rules in the shared VPC host project. This enables multi-cluster Istio data plane connectivity.
+
+resource "google_compute_firewall" "gke_cross_cluster_pod" {
+  for_each = local.gke_cross_cluster_firewall_rules
+
+  allow {
+    protocol = "all"
+  }
+
+  description = "Allow cross-cluster pod-to-pod traffic for ${each.key} GKE fleet"
+  direction   = "INGRESS"
+  name        = "gke-${each.key}-cross-cluster-pod"
+  network     = module.vpc.self_link
+  priority    = 1000
+
+  source_ranges = each.value.source_ranges
+}
+
 # Google Service Account Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_service_account
 
