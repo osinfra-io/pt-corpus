@@ -10,24 +10,6 @@ Here, Google Cloud projects are called into being according to shared patterns; 
 
 The Corpus layer is where structure becomes real, where governance becomes flesh, and where the platform’s foundational energies are harnessed so teams can build, act, and create within a world made stable enough for meaningful work.
 
-The infrastructure automates the creation of:
-
-- **Google Cloud Project** with CIS compliance features, budget controls, and required APIs
-- **Shared VPC** with service networking connection and peering ranges for GKE pods and services
-- **Private and Public DNS Zones** with configurable record sets per team
-- **Subnets** with GKE secondary ranges (pods and services) deployed per region
-- **Cloud NAT** for outbound internet access in each regional deployment
-- **Artifact Registry** with remote (Docker Hub proxy), standard, and virtual Docker repositories per team, with IAM bindings for image readers and writers
-- **Kubernetes Projects** (one per team with GKE clusters) with Datadog integration — GKE clusters are created by pt-pneuma
-- **Datadog Integration** with Cloud Security Posture Management (CSPM) and Security Command Center
-- **Team Infrastructure** using the logos foundational platform for consistent labeling and governance
-- **GitHub Actions Integration** with service accounts, workload identity, and state storage buckets
-- **KMS Encryption** for secure state file encryption and key management
-- **Group Memberships** for billing users and browser groups at the organizational level
-- **Multi-environment Support** with sandbox, non-production, and production configurations
-
-This establishes team-specific infrastructure while maintaining consistency with organizational standards and foundational platform practices.
-
 ## 🏭 Platform Information
 
 - Documentation: [docs.osinfra.io](https://docs.osinfra.io/product-guides/google-cloud-platform/corpus)
