@@ -21,9 +21,12 @@ Links to documentation and other resources required to develop and iterate in th
 
 - [datadog cloud security posture management](https://docs.datadoghq.com/security/cloud_security_management/)
 - [datadog google cloud integration](https://docs.datadoghq.com/integrations/google_cloud_platform/)
+- [google artifact registry](https://cloud.google.com/artifact-registry/docs)
 - [google cloud platform cis benchmarks](https://cloud.google.com/security-command-center/docs/cis-benchmarks)
 - [google cloud platform iam](https://cloud.google.com/iam/docs/overview)
 - [google cloud platform kms](https://cloud.google.com/kms/docs)
 - [google cloud platform projects](https://cloud.google.com/resource-manager/docs/creating-managing-projects)
 - [google cloud platform vpc networking](https://cloud.google.com/vpc/docs)
 - [google kubernetes engine](https://cloud.google.com/kubernetes-engine/docs)
+- [google private service access](https://cloud.google.com/vpc/docs/private-services-access)
+- [google workload identity federation](https://cloud.google.com/iam/docs/workload-identity-federation)
