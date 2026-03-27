@@ -10,21 +10,6 @@ Here, Google Cloud projects are called into being according to shared patterns; 
 
 The Corpus layer is where structure becomes real, where governance becomes flesh, and where the platform’s foundational energies are harnessed so teams can build, act, and create within a world made stable enough for meaningful work.
 
-## 🏭 Platform Information
-
-- Documentation: [docs.osinfra.io](https://docs.osinfra.io/product-guides/google-cloud-platform/corpus)
-- Service Interfaces: [github.com](https://github.com/osinfra-io/pt-corpus/issues/new/choose)
-
-## <img align="left" width="35" height="35" src="https://github.com/user-attachments/assets/eb98a3be-2ffe-4c05-91a4-072fe795a167"> Development
-
-Our focus is on the core fundamental practice of platform engineering, Infrastructure as Code.
-
->Open Source Infrastructure (as Code) is a development model for infrastructure that focuses on open collaboration and applying relative lessons learned from software development practices that organizations can use internally at scale. - [Open Source Infrastructure (as Code)](https://www.osinfra.io)
-
-To avoid slowing down stream-aligned teams, we want to open up the possibility for contributions. The Open Source Infrastructure (as Code) model allows team members external to the platform team to contribute with only a slight increase in cognitive load. This section is for developers who want to contribute to this repository, describing the tools used, the skills, and the knowledge required, along with OpenTofu documentation.
-
-See the [documentation](https://docs.osinfra.io/fundamentals/development-setup) for setting up a development environment.
-
 ### 🛠️ Tools
 
 - [pre-commit](https://github.com/pre-commit/pre-commit)
