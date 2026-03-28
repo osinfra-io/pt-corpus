@@ -1,11 +1,11 @@
 # Google Cloud NAT Module (osinfra.io)
 # https://github.com/osinfra-io/opentofu-google-cloud-nat
 
-module "cloud_nat" {
+module "google_network_cloud_nat" {
   source = "github.com/osinfra-io/pt-arche-google-network//regional/nat?ref=997d35aa6b0c0d122a87282b096220c87d3795d0" # v0.3.2
 
   depends_on = [
-    module.subnets
+    module.google_network_subnets
   ]
 
   network = local.main.vpc_name
@@ -15,7 +15,7 @@ module "cloud_nat" {
 # Google Subnet Module (osinfra.io)
 # https://github.com/osinfra-io/opentofu-google-subnet
 
-module "subnets" {
+module "google_network_subnets" {
   for_each = local.regional_subnets
   source   = "github.com/osinfra-io/pt-arche-google-network//regional?ref=997d35aa6b0c0d122a87282b096220c87d3795d0" # v0.3.2
 
@@ -45,20 +45,17 @@ resource "google_compute_subnetwork_iam_member" "cloud_services" {
 
   member     = "serviceAccount:${each.value.service_project_number}@cloudservices.gserviceaccount.com"
   project    = local.main.project_id
-  region     = module.helpers.region
+  region     = module.core_helpers.region
   role       = "roles/compute.networkUser"
-  subnetwork = module.subnets[each.key].name
+  subnetwork = module.google_network_subnets[each.key].name
 }
-
-# Compute Subnetwork IAM Member Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_subnetwork_iam
 
 resource "google_compute_subnetwork_iam_member" "container_engine" {
   for_each = local.regional_subnets
 
   member     = "serviceAccount:service-${each.value.service_project_number}@container-engine-robot.iam.gserviceaccount.com"
   project    = local.main.project_id
-  region     = module.helpers.region
+  region     = module.core_helpers.region
   role       = "roles/compute.networkUser"
-  subnetwork = module.subnets[each.key].name
+  subnetwork = module.google_network_subnets[each.key].name
 }

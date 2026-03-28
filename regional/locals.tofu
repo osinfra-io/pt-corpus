@@ -7,5 +7,5 @@ locals {
 
   # Regional subnets
   # Filter subnets for the current region from the main state
-  regional_subnets = lookup(local.main.regional_subnets, module.helpers.region, {})
+  regional_subnets = lookup(local.main.regional_subnets, module.core_helpers.region, {})
 }
