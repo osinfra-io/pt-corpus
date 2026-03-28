@@ -74,100 +74,6 @@ module "kubernetes_datadog" {
   project                            = module.kubernetes_projects[each.key].id
 }
 
-# Google Artifact Registry Repository
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository
-
-resource "google_artifact_registry_repository" "docker_remote" {
-  lifecycle {
-    enabled = length(local.teams_with_artifact_registries) > 0
-  }
-
-  description = "Registry for multi-region - US Docker Hub"
-  format      = "DOCKER"
-  labels      = module.helpers.labels
-  location    = "us"
-  mode        = "REMOTE_REPOSITORY"
-  project     = module.project.id
-
-  remote_repository_config {
-    description = "docker hub"
-    docker_repository {
-      public_repository = "DOCKER_HUB"
-    }
-  }
-
-  repository_id = "docker-remote"
-}
-
-# Google Artifact Registry Repository
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository
-
-resource "google_artifact_registry_repository" "docker_standard" {
-  for_each = local.teams_with_artifact_registries
-
-  description   = "Registry for multi-region - US Standard : ${each.key}"
-  format        = "DOCKER"
-  labels        = module.helpers.labels
-  location      = "us"
-  project       = module.project.id
-  repository_id = "${each.key}-standard"
-}
-
-# Google Artifact Registry Repository
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository
-
-resource "google_artifact_registry_repository" "docker_virtual" {
-  for_each = local.teams_with_artifact_registries
-
-  description   = "Registry for multi-region - US Virtual : ${each.key}"
-  format        = "DOCKER"
-  labels        = module.helpers.labels
-  location      = "us"
-  mode          = "VIRTUAL_REPOSITORY"
-  project       = module.project.id
-  repository_id = "${each.key}-virtual"
-
-  virtual_repository_config {
-    upstream_policies {
-      id         = each.key
-      priority   = 20
-      repository = google_artifact_registry_repository.docker_standard[each.key].id
-    }
-
-    upstream_policies {
-      id         = "docker"
-      priority   = 10
-      repository = google_artifact_registry_repository.docker_remote.id
-    }
-  }
-}
-
-# Google Artifact Registry IAM Binding
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository_iam
-
-resource "google_artifact_registry_repository_iam_binding" "docker_standard_writers" {
-  for_each = local.teams_with_artifact_registries
-
-  location   = "us"
-  members    = each.value.registry_writers
-  project    = module.project.id
-  repository = google_artifact_registry_repository.docker_standard[each.key].id
-  role       = "roles/artifactregistry.writer"
-}
-
-# Google Artifact Registry IAM Binding
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository_iam
-
-resource "google_artifact_registry_repository_iam_binding" "docker_virtual_readers" {
-  for_each = local.teams_with_artifact_registries
-
-  location   = "us"
-  members    = each.value.registry_readers
-  project    = module.project.id
-  repository = google_artifact_registry_repository.docker_virtual[each.key].id
-  role       = "roles/artifactregistry.reader"
-}
-
 # Google Kubernetes Project Module (osinfra.io)
 # https://github.com/osinfra-io/pt-arche-google-project
 # Create Kubernetes projects for teams with google_kubernetes_engine_clusters
@@ -367,6 +273,144 @@ resource "google_cloud_identity_group_membership" "browsers" {
   roles { name = "MEMBER" }
 }
 
+# Google KMS Crypto Key IAM Member
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key_iam_member
+
+# BUG: https://github.com/hashicorp/terraform-provider-google/issues/7611
+resource "google_kms_crypto_key_iam_member" "cloud_storage_service_account" {
+  crypto_key_id = google_kms_crypto_key.state_encryption.id
+  member        = "serviceAccount:service-${module.project.number}@gs-project-accounts.iam.gserviceaccount.com"
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+}
+
+# Project IAM Member Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam_member
+
+resource "google_project_iam_member" "container_engine_firewall_management" {
+  for_each = local.vpc_service_projects_kubernetes
+
+  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
+  project = module.project.id
+  role    = "organizations/163313809793/roles/kubernetes.hostFirewallManagement"
+}
+
+# Project IAM Member Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam
+
+resource "google_project_iam_member" "container_engine_service_agent_user" {
+  for_each = local.vpc_service_projects_kubernetes
+
+  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
+  project = module.project.id
+  role    = "roles/container.hostServiceAgentUser"
+}
+
+# DNS Records Admin for Teams with GKE Clusters
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam
+# Teams with Kubernetes clusters need to manage DNS records for their Istio gateways.
+
+resource "google_project_iam_member" "dns_records_admins_gke_teams" {
+  for_each = local.gke_teams_with_service_accounts
+
+  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  project = module.project.id
+  role    = "organizations/163313809793/roles/dns.recordsAdmin"
+}
+
+# Google Artifact Registry Repository
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository
+
+resource "google_artifact_registry_repository" "docker_remote" {
+  lifecycle {
+    enabled = length(local.teams_with_artifact_registries) > 0
+  }
+
+  description = "Registry for multi-region - US Docker Hub"
+  format      = "DOCKER"
+  labels      = module.helpers.labels
+  location    = "us"
+  mode        = "REMOTE_REPOSITORY"
+  project     = module.project.id
+
+  remote_repository_config {
+    description = "docker hub"
+    docker_repository {
+      public_repository = "DOCKER_HUB"
+    }
+  }
+
+  repository_id = "docker-remote"
+}
+
+# Google Artifact Registry Repository
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository
+
+resource "google_artifact_registry_repository" "docker_standard" {
+  for_each = local.teams_with_artifact_registries
+
+  description   = "Registry for multi-region - US Standard : ${each.key}"
+  format        = "DOCKER"
+  labels        = module.helpers.labels
+  location      = "us"
+  project       = module.project.id
+  repository_id = "${each.key}-standard"
+}
+
+# Google Artifact Registry IAM Binding
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository_iam
+
+resource "google_artifact_registry_repository_iam_binding" "docker_standard_writers" {
+  for_each = local.teams_with_artifact_registries
+
+  location   = "us"
+  members    = each.value.registry_writers
+  project    = module.project.id
+  repository = google_artifact_registry_repository.docker_standard[each.key].id
+  role       = "roles/artifactregistry.writer"
+}
+
+# Google Artifact Registry Repository
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository
+
+resource "google_artifact_registry_repository" "docker_virtual" {
+  for_each = local.teams_with_artifact_registries
+
+  description   = "Registry for multi-region - US Virtual : ${each.key}"
+  format        = "DOCKER"
+  labels        = module.helpers.labels
+  location      = "us"
+  mode          = "VIRTUAL_REPOSITORY"
+  project       = module.project.id
+  repository_id = "${each.key}-virtual"
+
+  virtual_repository_config {
+    upstream_policies {
+      id         = each.key
+      priority   = 20
+      repository = google_artifact_registry_repository.docker_standard[each.key].id
+    }
+
+    upstream_policies {
+      id         = "docker"
+      priority   = 10
+      repository = google_artifact_registry_repository.docker_remote.id
+    }
+  }
+}
+
+# Google Artifact Registry IAM Binding
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/artifact_registry_repository_iam
+
+resource "google_artifact_registry_repository_iam_binding" "docker_virtual_readers" {
+  for_each = local.teams_with_artifact_registries
+
+  location   = "us"
+  members    = each.value.registry_readers
+  project    = module.project.id
+  repository = google_artifact_registry_repository.docker_virtual[each.key].id
+  role       = "roles/artifactregistry.reader"
+}
+
 # Billing users group membership
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/cloud_identity_group_membership
 # Group created centrally in pt-logos, membership managed per team.
@@ -395,6 +439,74 @@ resource "google_cloud_identity_group_membership" "github_actions" {
   }
 }
 
+# Google KMS Crypto Key IAM Member
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key_iam
+
+resource "google_kms_crypto_key_iam_member" "github_actions" {
+  for_each = local.opentofu_state_management
+
+  crypto_key_id = google_kms_crypto_key.state_encryption.id
+  member        = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+}
+
+# Google Service Account Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_service_account
+
+resource "google_service_account" "github_actions" {
+  for_each = local.service_accounts
+
+  account_id   = "${each.key}-github"
+  display_name = "Service account for GitHub Actions"
+  project      = module.project.id
+}
+
+# Google Service Account IAM Member Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_service_account_iam#google_service_account_iam_member
+
+resource "google_service_account_iam_member" "github_actions" {
+  for_each = local.github_repositories
+
+  member             = "principalSet://iam.googleapis.com/projects/${module.project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.this["github-actions"].workload_identity_pool_id}/attribute.repository/osinfra-io/${each.value.repository}"
+  role               = "roles/iam.workloadIdentityUser"
+  service_account_id = google_service_account.github_actions[each.value.name].id
+}
+
+# Google Storage Bucket IAM Member
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/storage_bucket_iam#google_storage_bucket_iam_member
+
+resource "google_storage_bucket_iam_member" "github_actions" {
+  for_each = local.opentofu_state_management
+
+  bucket = module.state_storage_bucket[each.key].name
+  member = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  role   = "roles/storage.objectAdmin"
+}
+
+# Google Project Owners
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam
+# Grant team service accounts owner role on their google_projects.
+
+resource "google_project_iam_member" "google_project_owners" {
+  for_each = local.google_projects_with_service_accounts
+
+  member  = "serviceAccount:${google_service_account.github_actions[each.value.team_key].email}"
+  project = module.google_projects[each.key].id
+  role    = "roles/owner"
+}
+
+# Kubernetes Project Owners
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam
+# Grant team service accounts owner role on their kubernetes_projects.
+
+resource "google_project_iam_member" "kubernetes_project_owners" {
+  for_each = local.gke_teams_with_service_accounts
+
+  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  project = module.kubernetes_projects[each.key].id
+  role    = "roles/owner"
+}
+
 # Logos state readers group membership
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/cloud_identity_group_membership
 # Allows service accounts to read Logos OpenTofu state so all teams can use
@@ -414,6 +526,59 @@ resource "google_cloud_identity_group_membership" "logos_state_readers" {
   }
 
   roles { name = "MEMBER" }
+}
+
+# Google KMS Crypto Key IAM Member
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key_iam
+
+resource "google_kms_crypto_key_iam_member" "logos_state_readers" {
+  crypto_key_id = google_kms_crypto_key.state_encryption.id
+  member        = "group:${module.helpers.teams["pt-logos"].identity_groups["state-readers"].email}"
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+}
+
+# Google Storage Bucket IAM Member
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/storage_bucket_iam#google_storage_bucket_iam_member
+
+resource "google_storage_bucket_iam_member" "logos_state_readers" {
+  bucket = module.state_storage_bucket["pt-logos"].name
+  member = "group:${module.helpers.teams["pt-logos"].identity_groups["state-readers"].email}"
+  role   = "roles/storage.objectViewer"
+}
+
+resource "google_project_iam_member" "multi_cluster_service_agent" {
+  for_each = local.teams_with_gke_hub_host
+
+  member  = "serviceAccount:${google_project_service_identity.multi_cluster_service_agent[each.key].email}"
+  project = module.project.id
+  role    = "roles/multiclusterservicediscovery.serviceAgent"
+}
+
+# Multi-Cluster Service Discovery IAM Binding
+# Required for MCS setup with Shared VPC
+# https://cloud.google.com/kubernetes-engine/docs/how-to/multi-cluster-services/setup#shared-vpc
+
+resource "google_project_service_identity" "multi_cluster_service_agent" {
+  depends_on = [module.kubernetes_projects]
+  for_each   = local.teams_with_gke_hub_host
+  provider   = google-beta # Required for google_project_service_identity
+
+  project = module.kubernetes_projects[each.key].id
+  service = "multiclusterservicediscovery.googleapis.com"
+}
+
+# DNS Record Set Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/dns_record_set
+
+resource "google_dns_record_set" "osinfra_io_ns_delegation" {
+  for_each = { for delegation in var.osinfra_io_ns_delegations : delegation.name => delegation }
+
+  managed_zone = each.value.managed_zone
+  name         = "${each.value.name}."
+  project      = module.project.id
+  rrdatas      = each.value.rrdatas
+  ttl          = each.value.ttl
+  type         = "NS"
 }
 
 # Registry writers group membership
@@ -447,14 +612,44 @@ resource "google_compute_global_address" "service_network_peering_range" {
   purpose       = "VPC_PEERING"
 }
 
-# Compute Shared VPC Service Project Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_shared_vpc_service_project
+# Google KMS Crypto Key Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key
 
-resource "google_compute_shared_vpc_service_project" "this" {
-  for_each = local.vpc_service_projects
+resource "google_kms_crypto_key" "state_encryption" {
+  # CryptoKeys cannot be deleted from Google Cloud Platform. Destroying a OpenTofu-managed CryptoKey will
+  # remove it from state and delete all CryptoKeyVersions, rendering the key unusable, but will not delete
+  # the resource from the project. When OpenTofu destroys these keys, any data previously encrypted with
+  # these keys will be irrecoverable. For this reason, it is strongly recommended that you add lifecycle
+  # hooks to the resource to prevent accidental destruction.
 
-  host_project    = module.project.id
-  service_project = each.value.id
+  # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
+
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
+
+  key_ring        = google_kms_key_ring.state_encryption.id
+  labels          = module.helpers.labels
+  name            = "default"
+  rotation_period = "7776000s"
+}
+
+# Google KMS Key Ring Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_key_ring
+
+resource "google_kms_key_ring" "state_encryption" {
+  # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
+
+  # KeyRings cannot be deleted from Google Cloud Platform. Destroying a OpenTofu-managed KeyRing will remove it from
+  # state but will not delete the resource from the project.
+
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
+
+  location = "us"
+  name     = "state-encryption"
+  project  = module.project.id
 }
 
 # Compute Subnetwork IAM Member Resource
@@ -477,18 +672,14 @@ resource "google_dns_record_set" "team_ns_delegation" {
   type         = "NS"
 }
 
-# DNS Record Set Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/dns_record_set
+# Compute Shared VPC Service Project Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_shared_vpc_service_project
 
-resource "google_dns_record_set" "osinfra_io_ns_delegation" {
-  for_each = { for delegation in var.osinfra_io_ns_delegations : delegation.name => delegation }
+resource "google_compute_shared_vpc_service_project" "this" {
+  for_each = local.vpc_service_projects
 
-  managed_zone = each.value.managed_zone
-  name         = "${each.value.name}."
-  project      = module.project.id
-  rrdatas      = each.value.rrdatas
-  ttl          = each.value.ttl
-  type         = "NS"
+  host_project    = module.project.id
+  service_project = each.value.id
 }
 
 # To avoid subject collisions, we are using a single provider per workload identity pool.
@@ -528,178 +719,6 @@ resource "google_iam_workload_identity_pool_provider" "this" {
   }
 }
 
-# Google KMS Crypto Key Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key
-
-resource "google_kms_crypto_key" "state_encryption" {
-  # CryptoKeys cannot be deleted from Google Cloud Platform. Destroying a OpenTofu-managed CryptoKey will
-  # remove it from state and delete all CryptoKeyVersions, rendering the key unusable, but will not delete
-  # the resource from the project. When OpenTofu destroys these keys, any data previously encrypted with
-  # these keys will be irrecoverable. For this reason, it is strongly recommended that you add lifecycle
-  # hooks to the resource to prevent accidental destruction.
-
-  # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
-
-  # lifecycle {
-  #   prevent_destroy = true
-  # }
-
-  key_ring        = google_kms_key_ring.state_encryption.id
-  labels          = module.helpers.labels
-  name            = "default"
-  rotation_period = "7776000s"
-}
-
-
-# Google KMS Crypto Key IAM Member
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key_iam_member
-
-# BUG: https://github.com/hashicorp/terraform-provider-google/issues/7611
-resource "google_kms_crypto_key_iam_member" "cloud_storage_service_account" {
-  crypto_key_id = google_kms_crypto_key.state_encryption.id
-  member        = "serviceAccount:service-${module.project.number}@gs-project-accounts.iam.gserviceaccount.com"
-  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
-}
-
-# Google KMS Crypto Key IAM Member
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key_iam
-
-resource "google_kms_crypto_key_iam_member" "github_actions" {
-  for_each = local.opentofu_state_management
-
-  crypto_key_id = google_kms_crypto_key.state_encryption.id
-  member        = "serviceAccount:${google_service_account.github_actions[each.key].email}"
-  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
-}
-
-# Google KMS Crypto Key IAM Member
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_crypto_key_iam
-
-resource "google_kms_crypto_key_iam_member" "logos_state_readers" {
-  crypto_key_id = google_kms_crypto_key.state_encryption.id
-  member        = "group:${module.helpers.teams["pt-logos"].identity_groups["state-readers"].email}"
-  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
-}
-
-# Google KMS Key Ring Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_key_ring
-
-resource "google_kms_key_ring" "state_encryption" {
-  # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
-
-  # KeyRings cannot be deleted from Google Cloud Platform. Destroying a OpenTofu-managed KeyRing will remove it from
-  # state but will not delete the resource from the project.
-
-  # lifecycle {
-  #   prevent_destroy = true
-  # }
-
-  location = "us"
-  name     = "state-encryption"
-  project  = module.project.id
-}
-
-# Project IAM Member Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam_member
-
-resource "google_project_iam_member" "container_engine_firewall_management" {
-  for_each = local.vpc_service_projects_kubernetes
-
-  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
-  project = module.project.id
-  role    = "organizations/163313809793/roles/kubernetes.hostFirewallManagement"
-}
-
-# Project IAM Member Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam
-
-resource "google_project_iam_member" "container_engine_service_agent_user" {
-  for_each = local.vpc_service_projects_kubernetes
-
-  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
-  project = module.project.id
-  role    = "roles/container.hostServiceAgentUser"
-}
-
-# DNS Records Admin for Teams with GKE Clusters
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam
-# Teams with Kubernetes clusters need to manage DNS records for their Istio gateways.
-
-resource "google_project_iam_member" "dns_records_admins_gke_teams" {
-  for_each = local.gke_teams_with_service_accounts
-
-  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
-  project = module.project.id
-  role    = "organizations/163313809793/roles/dns.recordsAdmin"
-}
-
-# Google Project Owners
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam
-# Grant team service accounts owner role on their google_projects.
-
-resource "google_project_iam_member" "google_project_owners" {
-  for_each = local.google_projects_with_service_accounts
-
-  member  = "serviceAccount:${google_service_account.github_actions[each.value.team_key].email}"
-  project = module.google_projects[each.key].id
-  role    = "roles/owner"
-}
-
-# Kubernetes Project Owners
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam
-# Grant team service accounts owner role on their kubernetes_projects.
-
-resource "google_project_iam_member" "kubernetes_project_owners" {
-  for_each = local.gke_teams_with_service_accounts
-
-  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
-  project = module.kubernetes_projects[each.key].id
-  role    = "roles/owner"
-}
-
-# Multi-Cluster Service Discovery IAM Binding
-# Required for MCS setup with Shared VPC
-# https://cloud.google.com/kubernetes-engine/docs/how-to/multi-cluster-services/setup#shared-vpc
-
-resource "google_project_service_identity" "multi_cluster_service_agent" {
-  depends_on = [module.kubernetes_projects]
-  for_each   = local.teams_with_gke_hub_host
-  provider   = google-beta # Required for google_project_service_identity
-
-  project = module.kubernetes_projects[each.key].id
-  service = "multiclusterservicediscovery.googleapis.com"
-}
-
-resource "google_project_iam_member" "multi_cluster_service_agent" {
-  for_each = local.teams_with_gke_hub_host
-
-  member  = "serviceAccount:${google_project_service_identity.multi_cluster_service_agent[each.key].email}"
-  project = module.project.id
-  role    = "roles/multiclusterservicediscovery.serviceAgent"
-}
-
-# Google Service Account Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_service_account
-
-resource "google_service_account" "github_actions" {
-  for_each = local.service_accounts
-
-  account_id   = "${each.key}-github"
-  display_name = "Service account for GitHub Actions"
-  project      = module.project.id
-}
-
-# Google Service Account IAM Member Resource
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_service_account_iam#google_service_account_iam_member
-
-resource "google_service_account_iam_member" "github_actions" {
-  for_each = local.github_repositories
-
-  member             = "principalSet://iam.googleapis.com/projects/${module.project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.this["github-actions"].workload_identity_pool_id}/attribute.repository/osinfra-io/${each.value.repository}"
-  role               = "roles/iam.workloadIdentityUser"
-  service_account_id = google_service_account.github_actions[each.value.name].id
-}
-
 # Service Networking Connection Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/service_networking_connection
 
@@ -709,24 +728,4 @@ resource "google_service_networking_connection" "this" {
   reserved_peering_ranges = [google_compute_global_address.service_network_peering_range.name]
 
   service = "servicenetworking.googleapis.com"
-}
-
-# Google Storage Bucket IAM Member
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/storage_bucket_iam#google_storage_bucket_iam_member
-
-resource "google_storage_bucket_iam_member" "github_actions" {
-  for_each = local.opentofu_state_management
-
-  bucket = module.state_storage_bucket[each.key].name
-  member = "serviceAccount:${google_service_account.github_actions[each.key].email}"
-  role   = "roles/storage.objectAdmin"
-}
-
-# Google Storage Bucket IAM Member
-# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/storage_bucket_iam#google_storage_bucket_iam_member
-
-resource "google_storage_bucket_iam_member" "logos_state_readers" {
-  bucket = module.state_storage_bucket["pt-logos"].name
-  member = "group:${module.helpers.teams["pt-logos"].identity_groups["state-readers"].email}"
-  role   = "roles/storage.objectViewer"
 }
