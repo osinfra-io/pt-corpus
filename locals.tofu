@@ -63,6 +63,9 @@ locals {
     if team.enable_opentofu_state_management && team.enable_workflows
   }
 
+  # Enable Cloud Cost Management only in production
+  enable_cloud_cost_management = module.helpers.env == "prod"
+
   # osinfra.io DNS zone name and DNS name
   # Constructs the environment-level public zone identifier (e.g., osinfra.io in prod, sb.osinfra.io in sandbox)
   osinfra_io_dns_name      = module.helpers.env == "prod" ? "osinfra-io" : "${module.helpers.env}-osinfra-io"

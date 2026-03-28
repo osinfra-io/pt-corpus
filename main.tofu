@@ -9,6 +9,7 @@ module "datadog" {
   }
 
   api_key                            = var.datadog_api_key
+  enable_cloud_cost_management       = local.enable_cloud_cost_management
   is_cspm_enabled                    = true
   is_security_command_center_enabled = true
   labels                             = module.helpers.labels
