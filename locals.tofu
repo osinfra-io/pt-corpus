@@ -2,11 +2,18 @@
 # https://opentofu.org/docs/language/values/locals
 
 locals {
+  # Billing users manager role for_each
+  # Determines whether each service account gets the MANAGER role in the billing users group.
+  # Only the pt-corpus service account is granted MANAGER; all other teams get an empty list (MEMBER only).
+  billing_users_manager_for_each = {
+    for k, v in local.service_accounts : k => k == "pt-corpus" ? [1] : []
+  }
+
   # Billing users group - centrally managed in pt-logos, referenced here for membership management
-  billing_users_group_name = module.helpers.teams["pt-logos"].billing_users_group.name
+  billing_users_group_name = module.core_helpers.teams["pt-logos"].billing_users_group.name
 
   # Browser group - centrally managed in pt-logos, referenced here for membership management
-  browser_group_name = module.helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browsers"].name
+  browser_group_name = module.core_helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browsers"].name
 
   # Datadog Google project for_each
   # Resolves the for_each for the google_project_datadog module: enabled only when var.datadog_enable is true
@@ -17,15 +24,15 @@ locals {
   datadog_kubernetes_for_each = var.datadog_enable ? local.teams_with_kubernetes_datadog : {}
 
   # Enable Cloud Cost Management only in production
-  enable_cloud_cost_management = module.helpers.env == "prod"
+  enable_cloud_cost_management = module.core_helpers.env == "prod"
 
   # Environment key for logos lookup (title case with hyphens preserved)
   # Converts workspace environment (e.g., "non-production") to logos format (e.g., "Non-Production")
-  environment_key = title(module.helpers.environment)
+  environment_key = title(module.core_helpers.environment)
 
   # CEL ref assertions for the github-actions WIF provider (non-sandbox only).
   # Add entries here to permit additional refs (e.g. release tags).
-  github_actions_ref_conditions = module.helpers.env == "sb" ? [] : [
+  github_actions_ref_conditions = module.core_helpers.env == "sb" ? [] : [
     "assertion.ref == \"refs/heads/main\"",
     "assertion.ref.startsWith(\"refs/tags/\")",
   ]
@@ -34,7 +41,7 @@ locals {
   # Create a map of repositories for workload identity bindings
   github_repositories = {
     for item in flatten([
-      for team_key, team in module.helpers.teams : [
+      for team_key, team in module.core_helpers.teams : [
         for repo_key, repo in team.github_repositories : {
           name       = team_key
           repository = repo_key
@@ -56,7 +63,7 @@ locals {
   # Flatten team google_projects into a map keyed by "{team_key}-{description}" for project creation
   google_projects = {
     for item in flatten([
-      for team_key, team in module.helpers.teams : [
+      for team_key, team in module.core_helpers.teams : [
         for description, project in team.google_projects : {
           description    = description
           enable_datadog = project.enable_datadog
@@ -83,7 +90,7 @@ locals {
   }
 
   # Logos state readers group - centrally managed in pt-logos, referenced here for membership management
-  logos_state_readers_group_name = module.helpers.teams["pt-logos"].identity_groups["state-readers"].name
+  logos_state_readers_group_name = module.core_helpers.teams["pt-logos"].identity_groups["state-readers"].name
 
   # Non-corpus service accounts
   # Service accounts for teams other than pt-corpus, used for browser and state reader group memberships
@@ -94,20 +101,20 @@ locals {
   # OpenTofu State Management
   # Create a map of teams that need OpenTofu state management infrastructure (state bucket, KMS, storage IAM)
   opentofu_state_management = {
-    for team_key, team in module.helpers.teams :
+    for team_key, team in module.core_helpers.teams :
     team_key => {}
     if team.enable_opentofu_state_management && team.enable_workflows
   }
 
   # osinfra.io DNS zone name and DNS name
   # Constructs the environment-level public zone identifier (e.g., osinfra.io in prod, sb.osinfra.io in sandbox)
-  osinfra_io_dns_name      = module.helpers.env == "prod" ? "osinfra-io" : "${module.helpers.env}-osinfra-io"
-  osinfra_io_dns_zone_name = module.helpers.env == "prod" ? "osinfra.io." : "${module.helpers.env}.osinfra.io."
+  osinfra_io_dns_name      = module.core_helpers.env == "prod" ? "osinfra-io" : "${module.core_helpers.env}-osinfra-io"
+  osinfra_io_dns_zone_name = module.core_helpers.env == "prod" ? "osinfra.io." : "${module.core_helpers.env}.osinfra.io."
 
   # Private DNS zone name and DNS name
   # Used by the private DNS module to construct environment-specific zone identifiers
-  private_dns_name      = module.helpers.env == "prod" ? "gcp-priv-osinfra-io" : "gcp-priv-${module.helpers.env}-osinfra-io"
-  private_dns_zone_name = module.helpers.env == "prod" ? "gcp.priv.osinfra.io." : "gcp.priv.${module.helpers.env}.osinfra.io."
+  private_dns_name      = module.core_helpers.env == "prod" ? "gcp-priv-osinfra-io" : "gcp-priv-${module.core_helpers.env}-osinfra-io"
+  private_dns_zone_name = module.core_helpers.env == "prod" ? "gcp.priv.osinfra.io." : "gcp.priv.${module.core_helpers.env}.osinfra.io."
 
   # Regional subnets
   # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers
@@ -116,7 +123,7 @@ locals {
     region => {
       for subnet_key, subnet in local.team_subnets :
       subnet_key => merge(subnet, {
-        service_project_number = module.kubernetes_projects[subnet.team_key].number
+        service_project_number = module.google_project_kubernetes[subnet.team_key].number
       })
       if subnet.region == region
     }
@@ -125,7 +132,7 @@ locals {
   # Service Accounts
   # Create service accounts based on teams that have workflows enabled
   service_accounts = {
-    for team_key, team in module.helpers.teams :
+    for team_key, team in module.core_helpers.teams :
     team_key => {
       github_repositories = team.github_repositories
     }
@@ -136,7 +143,7 @@ locals {
   # Resolves the DNS subdomain for each team: uses dns_subdomain if set (e.g., "pneuma"),
   # otherwise derives it from the team key by stripping the org prefix (e.g., pt-pneuma → pneuma).
   team_dns_subdomains = {
-    for team_key, team in module.helpers.teams :
+    for team_key, team in module.core_helpers.teams :
     team_key => team.dns_subdomain != null ? team.dns_subdomain : replace(team_key, "/^[a-z]+-/", "")
     if team.google_kubernetes_engine_clusters != null && length(team.google_kubernetes_engine_clusters) > 0
   }
@@ -146,7 +153,7 @@ locals {
   # Keyed by derived cluster name ({team_key}-{location}).
   # Region is extracted from the location key by stripping the zone suffix (e.g., us-east1-b → us-east1).
   team_subnets = merge([
-    for team_key, team in module.helpers.teams : {
+    for team_key, team in module.core_helpers.teams : {
       for location, cluster in team.google_kubernetes_engine_clusters != null ? team.google_kubernetes_engine_clusters : {} :
       "${team_key}-${location}" => merge(cluster.subnet, {
         region   = regex("^(us-[a-z]+[0-9]+)-[a-z]$", location)[0]
@@ -158,11 +165,11 @@ locals {
   # Teams with Artifact Registries
   # Teams that have kubernetes.artifact_registry_groups_memberships defined in pt-logos
   teams_with_artifact_registries = {
-    for team_key, team in module.helpers.teams :
+    for team_key, team in module.core_helpers.teams :
     team_key => {
       registry_readers = [
         "group:${team.identity_groups["registry-readers"].email}",
-        "serviceAccount:${module.kubernetes_projects[team_key].number}-compute@developer.gserviceaccount.com"
+        "serviceAccount:${module.google_project_kubernetes[team_key].number}-compute@developer.gserviceaccount.com"
       ]
       registry_writers = [
         "group:${team.identity_groups["registry-writers"].email}"
@@ -177,10 +184,10 @@ locals {
   # Creates DNS zone configurations for teams with Kubernetes clusters.
   # Zone naming is env-first: prod → pneuma.osinfra.io, sb → pneuma.sb.osinfra.io, nonprod → pneuma.nonprod.osinfra.io.
   teams_with_dns_zones = {
-    for team_key, team in module.helpers.teams :
+    for team_key, team in module.core_helpers.teams :
     team_key => {
-      dns_name = module.helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}.osinfra.io." : "${local.team_dns_subdomains[team_key]}.${module.helpers.env}.osinfra.io."
-      name     = module.helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}-osinfra-io" : "${local.team_dns_subdomains[team_key]}-${module.helpers.env}-osinfra-io"
+      dns_name = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}.osinfra.io." : "${local.team_dns_subdomains[team_key]}.${module.core_helpers.env}.osinfra.io."
+      name     = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}-osinfra-io" : "${local.team_dns_subdomains[team_key]}-${module.core_helpers.env}-osinfra-io"
     }
     if team.google_kubernetes_engine_clusters != null && length(team.google_kubernetes_engine_clusters) > 0
   }
@@ -188,7 +195,7 @@ locals {
   # Teams with GKE Clusters
   # Identify teams that need Kubernetes projects
   teams_with_gke_clusters = {
-    for team_key, team in module.helpers.teams :
+    for team_key, team in module.core_helpers.teams :
     team_key => merge(team, {
       # Check if any cluster in this team has enable_gke_hub_host = true
       has_gke_hub_host = anytrue([
@@ -221,7 +228,7 @@ locals {
   # Keys must be statically known at plan time, so team_key is used instead of project.id
   vpc_service_projects = merge(
     {
-      for team_key, project in module.kubernetes_projects :
+      for team_key, project in module.google_project_kubernetes :
       team_key => {
         id     = project.id
         number = project.number
@@ -240,7 +247,7 @@ locals {
   # Only Kubernetes projects that need GKE-specific IAM permissions
   # Keys must be statically known at plan time, so team_key is used instead of project.id
   vpc_service_projects_kubernetes = {
-    for team_key, project in module.kubernetes_projects :
+    for team_key, project in module.google_project_kubernetes :
     team_key => {
       id     = project.id
       number = project.number
@@ -270,7 +277,7 @@ locals {
 
       # curl -H "Authorization: token $GITHUB_READ_ORG_TOKEN" https://api.github.com/orgs/osinfra-io
 
-      attribute_condition = module.helpers.env == "sb" ? "assertion.repository_owner_id==\"104685378\"" : "assertion.repository_owner_id==\"104685378\" && (${join(" || ", local.github_actions_ref_conditions)})"
+      attribute_condition = module.core_helpers.env == "sb" ? "assertion.repository_owner_id==\"104685378\"" : "assertion.repository_owner_id==\"104685378\" && (${join(" || ", local.github_actions_ref_conditions)})"
 
       # The tokens issued by your external identity provider contain one or more attributes. Some identity providers refer
       # to these attributes as claims. An attribute mapping defines how to derive the value of the Google STS token attribute

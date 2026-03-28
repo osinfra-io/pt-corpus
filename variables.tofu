@@ -37,12 +37,6 @@ variable "kubernetes_project_monthly_budget_amount" {
   type        = number
 }
 
-variable "project_billing_account" {
-  default     = "01C550-A2C86B-B8F16B"
-  description = "The alphanumeric ID of the billing account this project belongs to"
-  type        = string
-}
-
 variable "osinfra_io_ns_delegations" {
   default     = []
   description = "NS delegation records to add to the production osinfra.io zone delegating to environment-level zones (e.g., sb.osinfra.io and nonprod.osinfra.io)"
@@ -52,6 +46,12 @@ variable "osinfra_io_ns_delegations" {
     rrdatas      = list(string)
     ttl          = number
   }))
+}
+
+variable "project_billing_account" {
+  default     = "01C550-A2C86B-B8F16B"
+  description = "The alphanumeric ID of the billing account this project belongs to"
+  type        = string
 }
 
 variable "project_monthly_budget_amount" {

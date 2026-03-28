@@ -5,9 +5,9 @@ output "kubernetes_projects" {
   description = "All Kubernetes projects created for each team with complete details"
 
   value = {
-    for team_key, project in module.kubernetes_projects :
+    for team_key, project in module.google_project_kubernetes :
     team_key => {
-      environment = module.helpers.env
+      environment = module.core_helpers.env
       id          = project.id
       number      = project.number
       team        = team_key
@@ -17,17 +17,17 @@ output "kubernetes_projects" {
 
 output "osinfra_io_dns_zone" {
   description = "The environment public DNS zone (osinfra.io in prod, sb.osinfra.io in sandbox, nonprod.osinfra.io in non-production)"
-  value       = module.osinfra_io_dns
+  value       = module.google_network_osinfra_io_dns
 }
 
 output "project_id" {
   description = "The project ID"
-  value       = module.project.id
+  value       = module.google_project.id
 }
 
 output "project_number" {
   description = "The project number"
-  value       = module.project.number
+  value       = module.google_project.number
 }
 
 output "regional_subnets" {
@@ -50,7 +50,7 @@ output "service_accounts" {
 output "storage_buckets" {
   description = "Storage buckets created for OpenTofu state"
   value = {
-    for key, bucket in module.state_storage_bucket :
+    for key, bucket in module.google_storage_bucket :
     key => {
       name = bucket.name
       url  = bucket.url
@@ -62,7 +62,7 @@ output "teams" {
   description = "All teams data from logos workspaces with Kubernetes projects enriched"
 
   value = {
-    for team_key, team in module.helpers.teams :
+    for team_key, team in module.core_helpers.teams :
     team_key => merge(team, {
       google_projects = {
         for description, project in team.google_projects :
@@ -73,10 +73,10 @@ output "teams" {
         if contains(keys(module.google_projects), "${team_key}-${description}")
       }
 
-      kubernetes_project = contains(keys(module.kubernetes_projects), team_key) ? {
-        environment = module.helpers.env
-        id          = module.kubernetes_projects[team_key].id
-        number      = module.kubernetes_projects[team_key].number
+      kubernetes_project = contains(keys(module.google_project_kubernetes), team_key) ? {
+        environment = module.core_helpers.env
+        id          = module.google_project_kubernetes[team_key].id
+        number      = module.google_project_kubernetes[team_key].number
       } : null
     })
   }
@@ -84,7 +84,7 @@ output "teams" {
 
 output "vpc_name" {
   description = "The VPC name for regional deployments"
-  value       = module.vpc.name
+  value       = module.google_network_vpc.name
 }
 
 output "workload_identity_pools" {
