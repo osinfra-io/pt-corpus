@@ -37,17 +37,10 @@ variable "kubernetes_project_monthly_budget_amount" {
   type        = number
 }
 
-
 variable "project_billing_account" {
   default     = "01C550-A2C86B-B8F16B"
   description = "The alphanumeric ID of the billing account this project belongs to"
   type        = string
-}
-
-variable "project_monthly_budget_amount" {
-  default     = 5
-  description = "The monthly budget amount in USD to set for the project"
-  type        = number
 }
 
 variable "osinfra_io_ns_delegations" {
@@ -61,6 +54,11 @@ variable "osinfra_io_ns_delegations" {
   }))
 }
 
+variable "project_monthly_budget_amount" {
+  default     = 5
+  description = "The monthly budget amount in USD to set for the project"
+  type        = number
+}
 
 # These three state_* variables are required for early variable evaluation for backend and provider configuration.
 # They are defined in the GitHub Actions called workflows and should NOT be set in the OpenTofu configuration.

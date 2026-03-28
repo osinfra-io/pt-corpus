@@ -8,12 +8,27 @@ locals {
   # Browser group - centrally managed in pt-logos, referenced here for membership management
   browser_group_name = module.helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browsers"].name
 
+  # Datadog Google project for_each
+  # Resolves the for_each for the google_project_datadog module: enabled only when var.datadog_enable is true
+  datadog_google_project_for_each = var.datadog_enable ? local.google_projects_with_datadog : {}
+
+  # Datadog Kubernetes for_each
+  # Resolves the for_each for the kubernetes_datadog module: enabled only when var.datadog_enable is true
+  datadog_kubernetes_for_each = var.datadog_enable ? local.teams_with_kubernetes_datadog : {}
+
+  # Enable Cloud Cost Management only in production
+  enable_cloud_cost_management = module.helpers.env == "prod"
+
   # Environment key for logos lookup (title case with hyphens preserved)
   # Converts workspace environment (e.g., "non-production") to logos format (e.g., "Non-Production")
   environment_key = title(module.helpers.environment)
 
-  # Logos state readers group - centrally managed in pt-logos, referenced here for membership management
-  logos_state_readers_group_name = module.helpers.teams["pt-logos"].identity_groups["state-readers"].name
+  # CEL ref assertions for the github-actions WIF provider (non-sandbox only).
+  # Add entries here to permit additional refs (e.g. release tags).
+  github_actions_ref_conditions = module.helpers.env == "sb" ? [] : [
+    "assertion.ref == \"refs/heads/main\"",
+    "assertion.ref.startsWith(\"refs/tags/\")",
+  ]
 
   # GitHub Repositories
   # Create a map of repositories for workload identity bindings
@@ -29,6 +44,12 @@ locals {
       ]
       if team.enable_workflows
     ]) : item.repository => item
+  }
+
+  # GKE teams with service accounts
+  # Subset of teams_with_gke_clusters filtered to those with a corresponding service account
+  gke_teams_with_service_accounts = {
+    for k, v in local.teams_with_gke_clusters : k => v if contains(keys(local.service_accounts), k)
   }
 
   # Google Projects
@@ -55,6 +76,21 @@ locals {
     if project.enable_datadog
   }
 
+  # Google projects with service accounts
+  # Subset of google_projects filtered to those whose team has a corresponding service account
+  google_projects_with_service_accounts = {
+    for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), v.team_key)
+  }
+
+  # Logos state readers group - centrally managed in pt-logos, referenced here for membership management
+  logos_state_readers_group_name = module.helpers.teams["pt-logos"].identity_groups["state-readers"].name
+
+  # Non-corpus service accounts
+  # Service accounts for teams other than pt-corpus, used for browser and state reader group memberships
+  non_corpus_service_accounts = {
+    for k, v in local.service_accounts : k => v if k != "pt-corpus"
+  }
+
   # OpenTofu State Management
   # Create a map of teams that need OpenTofu state management infrastructure (state bucket, KMS, storage IAM)
   opentofu_state_management = {
@@ -62,9 +98,6 @@ locals {
     team_key => {}
     if team.enable_opentofu_state_management && team.enable_workflows
   }
-
-  # Enable Cloud Cost Management only in production
-  enable_cloud_cost_management = module.helpers.env == "prod"
 
   # osinfra.io DNS zone name and DNS name
   # Constructs the environment-level public zone identifier (e.g., osinfra.io in prod, sb.osinfra.io in sandbox)
@@ -99,24 +132,6 @@ locals {
     if team.enable_workflows
   }
 
-  # Teams with Artifact Registries
-  # Teams that have kubernetes.artifact_registry_groups_memberships defined in pt-logos
-  teams_with_artifact_registries = {
-    for team_key, team in module.helpers.teams :
-    team_key => {
-      registry_readers = [
-        "group:${team.identity_groups["registry-readers"].email}",
-        "serviceAccount:${module.kubernetes_projects[team_key].number}-compute@developer.gserviceaccount.com"
-      ]
-      registry_writers = [
-        "group:${team.identity_groups["registry-writers"].email}"
-      ]
-    }
-    if contains(keys(team.identity_groups), "registry-readers") &&
-    contains(keys(team.identity_groups), "registry-writers") &&
-    team.enable_workflows
-  }
-
   # Team DNS Subdomains
   # Resolves the DNS subdomain for each team: uses dns_subdomain if set (e.g., "pneuma"),
   # otherwise derives it from the team key by stripping the org prefix (e.g., pt-pneuma → pneuma).
@@ -139,6 +154,24 @@ locals {
       })
     }
   ]...)
+
+  # Teams with Artifact Registries
+  # Teams that have kubernetes.artifact_registry_groups_memberships defined in pt-logos
+  teams_with_artifact_registries = {
+    for team_key, team in module.helpers.teams :
+    team_key => {
+      registry_readers = [
+        "group:${team.identity_groups["registry-readers"].email}",
+        "serviceAccount:${module.kubernetes_projects[team_key].number}-compute@developer.gserviceaccount.com"
+      ]
+      registry_writers = [
+        "group:${team.identity_groups["registry-writers"].email}"
+      ]
+    }
+    if contains(keys(team.identity_groups), "registry-readers") &&
+    contains(keys(team.identity_groups), "registry-writers") &&
+    team.enable_workflows
+  }
 
   # Teams with DNS Zones
   # Creates DNS zone configurations for teams with Kubernetes clusters.
@@ -216,13 +249,6 @@ locals {
 
   # Workload Identity
   # Configuration for external identity provider authentication
-
-  # CEL ref assertions for the github-actions WIF provider (non-sandbox only).
-  # Add entries here to permit additional refs (e.g. release tags).
-  github_actions_ref_conditions = module.helpers.env == "sb" ? [] : [
-    "assertion.ref == \"refs/heads/main\"",
-    "assertion.ref.startsWith(\"refs/tags/\")",
-  ]
 
   workload_identity = {
 

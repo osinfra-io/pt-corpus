@@ -50,6 +50,9 @@ resource "google_compute_subnetwork_iam_member" "cloud_services" {
   subnetwork = module.subnets[each.key].name
 }
 
+# Compute Subnetwork IAM Member Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/compute_subnetwork_iam
+
 resource "google_compute_subnetwork_iam_member" "container_engine" {
   for_each = local.regional_subnets
 
