@@ -162,6 +162,14 @@ locals {
     if team.has_gke_hub_host
   }
 
+  # Teams with Kubernetes Datadog enabled
+  # Subset of teams_with_gke_clusters where the team has opted in to Datadog integration
+  teams_with_kubernetes_datadog = {
+    for team_key, team in local.teams_with_gke_clusters :
+    team_key => team
+    if team.enable_kubernetes_datadog
+  }
+
   # VPC Service Projects
   # Automatically include all Kubernetes projects as VPC service projects
   # Merges manually configured service projects with Kubernetes projects

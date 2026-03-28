@@ -44,7 +44,7 @@ module "google_projects" {
 # https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "kubernetes_datadog" {
-  for_each = var.datadog_enable ? local.teams_with_gke_clusters : {}
+  for_each = var.datadog_enable ? local.teams_with_kubernetes_datadog : {}
   source   = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=a0f6388bd28937e49871f3e717740cf6775507ca" # v0.4.1
 
   api_key                            = var.datadog_api_key
