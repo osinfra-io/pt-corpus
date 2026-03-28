@@ -15,6 +15,25 @@ module "datadog" {
   project                            = module.project.id
 }
 
+# Datadog Google Cloud Platform Integration for Additional Google Projects
+# https://github.com/osinfra-io/pt-arche-datadog-google-integration
+
+module "google_project_datadog" {
+  for_each = var.datadog_enable ? local.google_projects_with_datadog : {}
+  source   = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=a0f6388bd28937e49871f3e717740cf6775507ca" # v0.4.1
+
+  api_key                            = var.datadog_api_key
+  is_cspm_enabled                    = true
+  is_security_command_center_enabled = true
+  labels = merge(
+    module.helpers.labels,
+    {
+      team = each.value.team_key
+    }
+  )
+  project = module.google_projects[each.key].id
+}
+
 # Google Project Module (osinfra.io)
 # https://github.com/osinfra-io/pt-arche-google-project
 
@@ -44,7 +63,7 @@ module "google_projects" {
 # https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "kubernetes_datadog" {
-  for_each = var.datadog_enable ? local.teams_with_gke_clusters : {}
+  for_each = var.datadog_enable ? local.teams_with_kubernetes_datadog : {}
   source   = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=a0f6388bd28937e49871f3e717740cf6775507ca" # v0.4.1
 
   api_key                            = var.datadog_api_key
