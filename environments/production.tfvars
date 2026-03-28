@@ -1,4 +1,4 @@
-kubernetes_project_monthly_budget_amount = 5
+datadog_enabled = true
 
 osinfra_io_ns_delegations = [
   {
