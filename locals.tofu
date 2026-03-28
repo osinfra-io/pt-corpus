@@ -37,13 +37,22 @@ locals {
     for item in flatten([
       for team_key, team in module.helpers.teams : [
         for description, project in team.google_projects : {
-          description = description
-          services    = project.services
-          team_key    = team_key
+          description    = description
+          enable_datadog = project.enable_datadog
+          services       = project.services
+          team_key       = team_key
         }
       ]
       if team.enable_workflows
     ]) : "${item.team_key}-${item.description}" => item
+  }
+
+  # Google Projects with Datadog enabled
+  # Subset of google_projects where the team has opted in to Datadog integration
+  google_projects_with_datadog = {
+    for key, project in local.google_projects :
+    key => project
+    if project.enable_datadog
   }
 
   # OpenTofu State Management
