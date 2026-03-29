@@ -16,9 +16,9 @@ module "google_network_cloud_nat" {
 # https://github.com/osinfra-io/opentofu-google-subnet
 
 module "google_network_subnets" {
-  for_each = local.regional_subnets
-  source   = "github.com/osinfra-io/pt-arche-google-network//regional?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
+  source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
 
+  for_each                 = local.regional_subnets
   ip_cidr_range            = each.value.ip_cidr_range
   name                     = each.key
   network                  = local.main.vpc_name

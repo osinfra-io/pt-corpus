@@ -2,11 +2,11 @@
 # https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "datadog_google_integration" {
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
+
   lifecycle {
     enabled = var.datadog_enable
   }
-
-  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
 
   api_key                            = var.datadog_api_key
   enable_cloud_cost_management       = local.enable_cloud_cost_management
@@ -20,9 +20,9 @@ module "datadog_google_integration" {
 # https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "datadog_google_integration_datadog_projects" {
-  for_each = local.datadog_google_project_for_each
-  source   = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
 
+  for_each                           = local.datadog_google_project_for_each
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true
   is_security_command_center_enabled = true
@@ -41,9 +41,9 @@ module "datadog_google_integration_datadog_projects" {
 # https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "datadog_google_integration_kubernetes_projects" {
-  for_each = local.datadog_kubernetes_for_each
-  source   = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
 
+  for_each                           = local.datadog_kubernetes_for_each
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true
   is_security_command_center_enabled = true
@@ -86,9 +86,9 @@ module "google_network_private_dns" {
 # https://github.com/osinfra-io/pt-arche-google-network
 
 module "google_network_team_dns" {
-  for_each = local.teams_with_dns_zones
-  source   = "github.com/osinfra-io/pt-arche-google-network//dns?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
 
+  for_each = local.teams_with_dns_zones
   dns_name = each.value.dns_name
 
   labels = merge(
@@ -155,9 +155,9 @@ module "google_project" {
 # Create Kubernetes projects for teams with google_kubernetes_engine_clusters
 
 module "google_project_kubernetes" {
-  for_each = local.teams_with_gke_clusters
-  source   = "github.com/osinfra-io/pt-arche-google-project?ref=885f309e179482619300f458bb2b6ec4ac1cdb94" # v0.6.8
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=885f309e179482619300f458bb2b6ec4ac1cdb94" # v0.6.8
 
+  for_each                        = local.teams_with_gke_clusters
   billing_account                 = var.project_billing_account
   cis_2_2_logging_sink_project_id = module.google_project.id
   deletion_policy                 = "DELETE"
@@ -203,9 +203,9 @@ module "google_project_kubernetes" {
 # https://github.com/osinfra-io/pt-arche-google-project
 
 module "google_projects" {
-  for_each = local.google_projects
-  source   = "github.com/osinfra-io/pt-arche-google-project?ref=885f309e179482619300f458bb2b6ec4ac1cdb94" # v0.6.8
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=885f309e179482619300f458bb2b6ec4ac1cdb94" # v0.6.8
 
+  for_each                        = local.google_projects
   billing_account                 = var.project_billing_account
   cis_2_2_logging_sink_project_id = module.google_project.id
   deletion_policy                 = "DELETE"
@@ -228,9 +228,9 @@ module "google_projects" {
 # https://github.com/osinfra-io/pt-arche-google-storage-bucket
 
 module "google_storage_bucket" {
-  for_each = local.opentofu_state_management
-  source   = "github.com/osinfra-io/pt-arche-google-storage-bucket?ref=06fed4c18033a3f458e42458889d5b920c68f3eb" # v0.3.2
+  source = "github.com/osinfra-io/pt-arche-google-storage-bucket?ref=06fed4c18033a3f458e42458889d5b920c68f3eb" # v0.3.2
 
+  for_each = local.opentofu_state_management
   labels   = module.core_helpers.labels
   location = "us"
   name     = "${each.key}-state-${module.core_helpers.env}"
