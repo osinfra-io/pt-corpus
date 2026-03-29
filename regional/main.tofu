@@ -2,7 +2,7 @@
 # https://github.com/osinfra-io/opentofu-google-cloud-nat
 
 module "google_network_cloud_nat" {
-  source = "github.com/osinfra-io/pt-arche-google-network//regional/nat?ref=997d35aa6b0c0d122a87282b096220c87d3795d0" # v0.3.2
+  source = "github.com/osinfra-io/pt-arche-google-network//regional/nat?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
 
   depends_on = [
     module.google_network_subnets
@@ -17,7 +17,7 @@ module "google_network_cloud_nat" {
 
 module "google_network_subnets" {
   for_each = local.regional_subnets
-  source   = "github.com/osinfra-io/pt-arche-google-network//regional?ref=997d35aa6b0c0d122a87282b096220c87d3795d0" # v0.3.2
+  source   = "github.com/osinfra-io/pt-arche-google-network//regional?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
 
   ip_cidr_range            = each.value.ip_cidr_range
   name                     = each.key
