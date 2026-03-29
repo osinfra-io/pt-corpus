@@ -2,15 +2,15 @@
 # https://opentofu.org/docs/language/values/locals
 
 locals {
+  # Billing users group - centrally managed in pt-logos, referenced here for membership management
+  billing_users_group_name = module.core_helpers.teams["pt-logos"].billing_users_group.name
+
   # Billing users manager role for_each
   # Determines whether each service account gets the MANAGER role in the billing users group.
   # Only the pt-corpus service account is granted MANAGER; all other teams get an empty list (MEMBER only).
   billing_users_manager_for_each = {
     for k, v in local.service_accounts : k => k == "pt-corpus" ? [1] : []
   }
-
-  # Billing users group - centrally managed in pt-logos, referenced here for membership management
-  billing_users_group_name = module.core_helpers.teams["pt-logos"].billing_users_group.name
 
   # Browser group - centrally managed in pt-logos, referenced here for membership management
   browser_group_name = module.core_helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browsers"].name
@@ -89,6 +89,34 @@ locals {
     for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), v.team_key)
   }
 
+  # Kubernetes project services
+  # Constructs the list of services for each Kubernetes project, conditionally appending GKE Hub services
+  kubernetes_project_services = {
+    for k, v in local.teams_with_gke_clusters : k => concat(
+      [
+        "billingbudgets.googleapis.com",
+        "certificatemanager.googleapis.com",
+        "cloudasset.googleapis.com",
+        "cloudbilling.googleapis.com",
+        "cloudkms.googleapis.com",
+        "cloudresourcemanager.googleapis.com",
+        "compute.googleapis.com",
+        "container.googleapis.com",
+        "iam.googleapis.com",
+        "iamcredentials.googleapis.com",
+        "monitoring.googleapis.com",
+        "multiclusterservicediscovery.googleapis.com",
+        "securitycenter.googleapis.com",
+        "serviceusage.googleapis.com",
+        "trafficdirector.googleapis.com"
+      ],
+      v.has_gke_hub_host ? [
+        "gkehub.googleapis.com",
+        "multiclusteringress.googleapis.com"
+      ] : []
+    )
+  }
+
   # Logos state readers group - centrally managed in pt-logos, referenced here for membership management
   logos_state_readers_group_name = module.core_helpers.teams["pt-logos"].identity_groups["state-readers"].name
 
@@ -147,6 +175,10 @@ locals {
     team_key => team.dns_subdomain != null ? team.dns_subdomain : replace(team_key, "/^[a-z]+-/", "")
     if team.google_kubernetes_engine_clusters != null && length(team.google_kubernetes_engine_clusters) > 0
   }
+
+  # Team labels
+  # Maps team keys to labels, merging core_helpers labels with the team key
+  team_labels = { for k, v in module.core_helpers.teams : k => merge(module.core_helpers.labels, { team = k }) }
 
   # Team subnets
   # Extract subnet configurations from cluster definitions in all teams, preserving team association.

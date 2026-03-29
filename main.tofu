@@ -16,9 +16,6 @@ module "datadog_google_integration" {
   project                            = module.google_project.id
 }
 
-# Datadog Google Cloud Platform Integration for Additional Google Projects
-# https://github.com/osinfra-io/pt-arche-datadog-google-integration
-
 module "datadog_google_integration_datadog_projects" {
   source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
 
@@ -26,19 +23,9 @@ module "datadog_google_integration_datadog_projects" {
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true
   is_security_command_center_enabled = true
-
-  labels = merge(
-    module.core_helpers.labels,
-    {
-      team = each.value.team_key
-    }
-  )
-
-  project = module.google_projects[each.key].id
+  labels                             = local.team_labels[each.value.team_key]
+  project                            = module.google_projects[each.key].id
 }
-
-# Datadog Google Cloud Platform Integration for Kubernetes Projects
-# https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "datadog_google_integration_kubernetes_projects" {
   source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
@@ -49,6 +36,17 @@ module "datadog_google_integration_kubernetes_projects" {
   is_security_command_center_enabled = true
   labels                             = module.core_helpers.labels
   project                            = module.google_project_kubernetes[each.key].id
+}
+
+# Google VPC Module (osinfra.io)
+# https://github.com/osinfra-io/pt-arche-google-network
+
+module "google_network_vpc" {
+  source = "github.com/osinfra-io/pt-arche-google-network?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
+
+  name       = "standard-shared"
+  project    = module.google_project.id
+  shared_vpc = true
 }
 
 # Google Cloud DNS Module (osinfra.io)
@@ -63,9 +61,6 @@ module "google_network_osinfra_io_dns" {
   project    = module.google_project.id
   visibility = "public"
 }
-
-# Google Cloud DNS Module (osinfra.io)
-# https://github.com/osinfra-io/pt-arche-google-network
 
 module "google_network_private_dns" {
   source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
@@ -82,36 +77,15 @@ module "google_network_private_dns" {
   visibility = "private"
 }
 
-# Google Cloud DNS Module (osinfra.io)
-# https://github.com/osinfra-io/pt-arche-google-network
-
 module "google_network_team_dns" {
   source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
 
-  for_each = local.teams_with_dns_zones
-  dns_name = each.value.dns_name
-
-  labels = merge(
-    module.core_helpers.labels,
-    {
-      team = each.key
-    }
-  )
-
+  for_each   = local.teams_with_dns_zones
+  dns_name   = each.value.dns_name
+  labels     = local.team_labels[each.key]
   name       = each.value.name
   project    = module.google_project.id
   visibility = "public"
-}
-
-# Google VPC Module (osinfra.io)
-# https://github.com/osinfra-io/opentofu-google-vpc
-
-module "google_network_vpc" {
-  source = "github.com/osinfra-io/pt-arche-google-network?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
-
-  name       = "standard-shared"
-  project    = module.google_project.id
-  shared_vpc = true
 }
 
 # Google Project Module (osinfra.io)
@@ -150,10 +124,6 @@ module "google_project" {
   ]
 }
 
-# Google Kubernetes Project Module (osinfra.io)
-# https://github.com/osinfra-io/pt-arche-google-project
-# Create Kubernetes projects for teams with google_kubernetes_engine_clusters
-
 module "google_project_kubernetes" {
   source = "github.com/osinfra-io/pt-arche-google-project?ref=885f309e179482619300f458bb2b6ec4ac1cdb94" # v0.6.8
 
@@ -163,44 +133,11 @@ module "google_project_kubernetes" {
   deletion_policy                 = "DELETE"
   description                     = "k8s"
   folder_id                       = module.core_helpers.teams[each.key].environments[local.environment_key]
-
-  labels = merge(
-    module.core_helpers.labels,
-    {
-      team = each.key
-    }
-  )
-
-  monthly_budget_amount = var.kubernetes_project_monthly_budget_amount
-  prefix                = each.key
-
-  services = concat(
-    [
-      "billingbudgets.googleapis.com",
-      "certificatemanager.googleapis.com",
-      "cloudasset.googleapis.com",
-      "cloudbilling.googleapis.com",
-      "cloudkms.googleapis.com",
-      "cloudresourcemanager.googleapis.com",
-      "compute.googleapis.com",
-      "container.googleapis.com",
-      "iam.googleapis.com",
-      "iamcredentials.googleapis.com",
-      "monitoring.googleapis.com",
-      "multiclusterservicediscovery.googleapis.com",
-      "securitycenter.googleapis.com",
-      "serviceusage.googleapis.com",
-      "trafficdirector.googleapis.com"
-    ],
-    each.value.has_gke_hub_host ? [
-      "gkehub.googleapis.com",
-      "multiclusteringress.googleapis.com"
-    ] : []
-  )
+  labels                          = local.team_labels[each.key]
+  monthly_budget_amount           = var.kubernetes_project_monthly_budget_amount
+  prefix                          = each.key
+  services                        = local.kubernetes_project_services[each.key]
 }
-
-# Google Project Module (osinfra.io)
-# https://github.com/osinfra-io/pt-arche-google-project
 
 module "google_projects" {
   source = "github.com/osinfra-io/pt-arche-google-project?ref=885f309e179482619300f458bb2b6ec4ac1cdb94" # v0.6.8
@@ -211,17 +148,10 @@ module "google_projects" {
   deletion_policy                 = "DELETE"
   description                     = each.value.description
   folder_id                       = module.core_helpers.teams[each.value.team_key].environments[local.environment_key]
-
-  labels = merge(
-    module.core_helpers.labels,
-    {
-      team = each.value.team_key
-    }
-  )
-
-  monthly_budget_amount = var.project_monthly_budget_amount
-  prefix                = each.value.team_key
-  services              = each.value.services
+  labels                          = local.team_labels[each.value.team_key]
+  monthly_budget_amount           = var.project_monthly_budget_amount
+  prefix                          = each.value.team_key
+  services                        = each.value.services
 }
 
 # Google Storage Bucket Module (osinfra.io)
@@ -479,19 +409,20 @@ resource "google_iam_workload_identity_pool" "this" {
 resource "google_iam_workload_identity_pool_provider" "this" {
   for_each = local.workload_identity
 
-  attribute_condition                = each.value.attribute_condition
-  attribute_mapping                  = each.value.attribute_mapping
-  description                        = "Workload Identity Pool Provider for ${each.value.display_name}"
-  disabled                           = lookup(each.value, "disabled", false)
-  display_name                       = "${each.value.display_name} OIDC"
-  project                            = module.google_project.id
-  workload_identity_pool_id          = google_iam_workload_identity_pool.this[each.key].workload_identity_pool_id
-  workload_identity_pool_provider_id = "${each.key}-oidc"
+  attribute_condition = each.value.attribute_condition
+  attribute_mapping   = each.value.attribute_mapping
+  description         = "Workload Identity Pool Provider for ${each.value.display_name}"
+  disabled            = lookup(each.value, "disabled", false)
+  display_name        = "${each.value.display_name} OIDC"
 
   oidc {
     allowed_audiences = lookup(each.value, "allowed_audiences", [])
     issuer_uri        = each.value.issuer_uri
   }
+
+  project                            = module.google_project.id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.this[each.key].workload_identity_pool_id
+  workload_identity_pool_provider_id = "${each.key}-oidc"
 }
 
 # Google KMS Crypto Key Resource
@@ -504,11 +435,9 @@ resource "google_kms_crypto_key" "state_encryption" {
   # these keys will be irrecoverable. For this reason, it is strongly recommended that you add lifecycle
   # hooks to the resource to prevent accidental destruction.
 
-  # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
-
-  # lifecycle {
-  #   prevent_destroy = true
-  # }
+  lifecycle {
+    prevent_destroy = true
+  }
 
   key_ring        = google_kms_key_ring.state_encryption.id
   labels          = module.core_helpers.labels
@@ -544,14 +473,12 @@ resource "google_kms_crypto_key_iam_member" "logos_state_readers" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/kms_key_ring
 
 resource "google_kms_key_ring" "state_encryption" {
-  # We can't use the lifecycle block to prevent destroy on this resource for testing purposes.
-
   # KeyRings cannot be deleted from Google Cloud Platform. Destroying a OpenTofu-managed KeyRing will remove it from
   # state but will not delete the resource from the project.
 
-  # lifecycle {
-  #   prevent_destroy = true
-  # }
+  lifecycle {
+    prevent_destroy = true
+  }
 
   location = "us"
   name     = "state-encryption"
@@ -618,9 +545,8 @@ resource "google_project_iam_member" "multi_cluster_service_agents" {
   role    = "roles/multiclusterservicediscovery.serviceAgent"
 }
 
-# Multi-Cluster Service Discovery IAM Binding
-# Required for MCS setup with Shared VPC
-# https://cloud.google.com/kubernetes-engine/docs/how-to/multi-cluster-services/setup#shared-vpc
+# Google Project Service Identity Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_service_identity
 
 resource "google_project_service_identity" "multi_cluster_service_agents" {
   depends_on = [module.google_project_kubernetes]

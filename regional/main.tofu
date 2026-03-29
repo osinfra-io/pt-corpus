@@ -1,19 +1,5 @@
-# Google Cloud NAT Module (osinfra.io)
-# https://github.com/osinfra-io/opentofu-google-cloud-nat
-
-module "google_network_cloud_nat" {
-  source = "github.com/osinfra-io/pt-arche-google-network//regional/nat?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
-
-  depends_on = [
-    module.google_network_subnets
-  ]
-
-  network = local.main.vpc_name
-  project = local.main.project_id
-}
-
 # Google Subnet Module (osinfra.io)
-# https://github.com/osinfra-io/opentofu-google-subnet
+# https://github.com/osinfra-io/pt-arche-google-network
 
 module "google_network_subnets" {
   source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
@@ -35,6 +21,17 @@ module "google_network_subnets" {
       range_name    = "k8s-secondary-services"
     }
   ]
+}
+
+module "google_network_cloud_nat" {
+  source = "github.com/osinfra-io/pt-arche-google-network//regional/nat?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
+
+  depends_on = [
+    module.google_network_subnets
+  ]
+
+  network = local.main.vpc_name
+  project = local.main.project_id
 }
 
 # Compute Subnetwork IAM Member Resource
