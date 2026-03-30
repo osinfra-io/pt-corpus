@@ -2,7 +2,7 @@
 # https://github.com/osinfra-io/pt-arche-google-network
 
 module "google_network_subnets" {
-  source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
+  source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
 
   for_each                 = local.regional_subnets
   ip_cidr_range            = each.value.ip_cidr_range
@@ -24,7 +24,7 @@ module "google_network_subnets" {
 }
 
 module "google_network_cloud_nat" {
-  source = "github.com/osinfra-io/pt-arche-google-network//regional/nat?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
+  source = "github.com/osinfra-io/pt-arche-google-network//regional/nat?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
 
   depends_on = [
     module.google_network_subnets

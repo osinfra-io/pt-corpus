@@ -2,7 +2,7 @@
 # https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "datadog_google_integration" {
-  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=52c9646bfd977026b3e25cddcb87e65224796ca9" # v0.4.5
 
   lifecycle {
     enabled = var.datadog_enable
@@ -17,7 +17,7 @@ module "datadog_google_integration" {
 }
 
 module "datadog_google_integration_datadog_projects" {
-  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=52c9646bfd977026b3e25cddcb87e65224796ca9" # v0.4.5
 
   for_each                           = local.datadog_google_project_for_each
   api_key                            = var.datadog_api_key
@@ -28,7 +28,7 @@ module "datadog_google_integration_datadog_projects" {
 }
 
 module "datadog_google_integration_kubernetes_projects" {
-  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=329a3c3120b8060d4492cab68618dd8579ff7355" # v0.4.2
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=52c9646bfd977026b3e25cddcb87e65224796ca9" # v0.4.5
 
   for_each                           = local.datadog_kubernetes_for_each
   api_key                            = var.datadog_api_key
@@ -42,7 +42,7 @@ module "datadog_google_integration_kubernetes_projects" {
 # https://github.com/osinfra-io/pt-arche-google-network
 
 module "google_network_vpc" {
-  source = "github.com/osinfra-io/pt-arche-google-network?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
+  source = "github.com/osinfra-io/pt-arche-google-network?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
 
   name       = "standard-shared"
   project    = module.google_project.id
@@ -53,7 +53,7 @@ module "google_network_vpc" {
 # https://github.com/osinfra-io/pt-arche-google-network
 
 module "google_network_osinfra_io_dns" {
-  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
 
   dns_name   = local.osinfra_io_dns_zone_name
   labels     = module.core_helpers.labels
@@ -63,7 +63,7 @@ module "google_network_osinfra_io_dns" {
 }
 
 module "google_network_private_dns" {
-  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
 
   dns_name = local.private_dns_zone_name
   labels   = module.core_helpers.labels
@@ -78,7 +78,7 @@ module "google_network_private_dns" {
 }
 
 module "google_network_team_dns" {
-  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=7e7a565fe9f63f0c2367272da5d301d1154731de" # v0.3.3
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
 
   for_each   = local.teams_with_dns_zones
   dns_name   = each.value.dns_name
@@ -92,7 +92,7 @@ module "google_network_team_dns" {
 # https://github.com/osinfra-io/pt-arche-google-project
 
 module "google_project" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=885f309e179482619300f458bb2b6ec4ac1cdb94" # v0.6.8
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=8b86debb6614d96cb891b652754693a459e9efbb" # v0.6.10
 
   billing_account       = var.project_billing_account
   deletion_policy       = "DELETE"
@@ -125,7 +125,7 @@ module "google_project" {
 }
 
 module "google_project_kubernetes" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=885f309e179482619300f458bb2b6ec4ac1cdb94" # v0.6.8
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=8b86debb6614d96cb891b652754693a459e9efbb" # v0.6.10
 
   for_each                        = local.teams_with_gke_clusters
   billing_account                 = var.project_billing_account
@@ -140,7 +140,7 @@ module "google_project_kubernetes" {
 }
 
 module "google_projects" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=885f309e179482619300f458bb2b6ec4ac1cdb94" # v0.6.8
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=8b86debb6614d96cb891b652754693a459e9efbb" # v0.6.10
 
   for_each                        = local.google_projects
   billing_account                 = var.project_billing_account
@@ -158,7 +158,7 @@ module "google_projects" {
 # https://github.com/osinfra-io/pt-arche-google-storage-bucket
 
 module "google_storage_bucket" {
-  source = "github.com/osinfra-io/pt-arche-google-storage-bucket?ref=06fed4c18033a3f458e42458889d5b920c68f3eb" # v0.3.2
+  source = "github.com/osinfra-io/pt-arche-google-storage-bucket?ref=b518fbdf3d480f827e2f360d97ce4d0600a3ff3b" # v0.3.4
 
   for_each = local.opentofu_state_management
   labels   = module.core_helpers.labels
