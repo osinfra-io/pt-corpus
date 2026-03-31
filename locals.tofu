@@ -173,7 +173,7 @@ locals {
   team_dns_subdomains = {
     for team_key, team in module.core_helpers.teams :
     team_key => team.dns_subdomain != null ? team.dns_subdomain : replace(team_key, "/^[a-z]+-/", "")
-    if team.google_kubernetes_engine_clusters != null && length(team.google_kubernetes_engine_clusters) > 0
+    if length(team.google_kubernetes_engine_clusters.locations) > 0
   }
 
   # Team labels
@@ -186,7 +186,7 @@ locals {
   # Region is extracted from the location key by stripping the zone suffix (e.g., us-east1-b → us-east1).
   team_subnets = merge([
     for team_key, team in module.core_helpers.teams : {
-      for location, cluster in team.google_kubernetes_engine_clusters != null ? team.google_kubernetes_engine_clusters : {} :
+      for location, cluster in team.google_kubernetes_engine_clusters.locations :
       "${team_key}-${location}" => merge(cluster.subnet, {
         region   = regex("^(us-[a-z]+[0-9]+)-[a-z]$", location)[0]
         team_key = team_key
@@ -221,7 +221,7 @@ locals {
       dns_name = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}.osinfra.io." : "${local.team_dns_subdomains[team_key]}.${module.core_helpers.env}.osinfra.io."
       name     = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}-osinfra-io" : "${local.team_dns_subdomains[team_key]}-${module.core_helpers.env}-osinfra-io"
     }
-    if team.google_kubernetes_engine_clusters != null && length(team.google_kubernetes_engine_clusters) > 0
+    if length(team.google_kubernetes_engine_clusters.locations) > 0
   }
 
   # Teams with GKE Clusters
@@ -231,11 +231,11 @@ locals {
     team_key => merge(team, {
       # Check if any cluster in this team has enable_gke_hub_host = true
       has_gke_hub_host = anytrue([
-        for location, cluster in team.google_kubernetes_engine_clusters != null ? team.google_kubernetes_engine_clusters : {} :
+        for location, cluster in team.google_kubernetes_engine_clusters.locations :
         lookup(cluster, "enable_gke_hub_host", false)
       ])
     })
-    if team.google_kubernetes_engine_clusters != null && length(team.google_kubernetes_engine_clusters) > 0
+    if length(team.google_kubernetes_engine_clusters.locations) > 0
   }
 
   # Teams with GKE Hub Host
