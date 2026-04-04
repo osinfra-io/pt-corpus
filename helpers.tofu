@@ -11,7 +11,6 @@ module "core_helpers" {
   logos_workspaces = [
     "pt-arche-main-production",
     "pt-corpus-main-production",
-    "pt-ekklesia-main-production",
     "pt-logos-main-production",
     "pt-pneuma-main-production",
     "pt-techne-main-production"
