@@ -30,3 +30,16 @@ Links to documentation and other resources required to develop and iterate in th
 - [google kubernetes engine](https://cloud.google.com/kubernetes-engine/docs)
 - [google private service access](https://cloud.google.com/vpc/docs/private-services-access)
 - [google workload identity federation](https://cloud.google.com/iam/docs/workload-identity-federation)
+
+## 🔄 Deployment Dependency Graph
+
+Each workflow (sandbox, non-production, production) deploys a `main` workspace first, then runs the regional jobs in parallel. Two regions are deployed: **us-east1** and **us-east4**.
+
+```mermaid
+flowchart LR
+    classDef corpus fill:#34A853,stroke:#34A853,color:#fff
+
+    main["Main"]:::corpus
+    main --> us_east1["Regional: us-east1"]:::corpus
+    main --> us_east4["Regional: us-east4"]:::corpus
+```
