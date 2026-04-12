@@ -1,6 +1,17 @@
 # Google Subnet Module (osinfra.io)
 # https://github.com/osinfra-io/pt-arche-google-network
 
+module "google_network_master_subnets" {
+  source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
+
+  for_each                 = local.regional_subnets
+  ip_cidr_range            = each.value.master_ipv4_cidr_block
+  name                     = "${each.key}-master"
+  network                  = local.main.vpc_name
+  private_ip_google_access = true
+  project                  = local.main.project_id
+}
+
 module "google_network_subnets" {
   source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
 
