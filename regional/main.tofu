@@ -58,6 +58,16 @@ resource "google_compute_subnetwork_iam_member" "cloud_services" {
   subnetwork = module.google_network_subnets[each.key].name
 }
 
+resource "google_compute_subnetwork_iam_member" "cloud_services_master" {
+  for_each = local.regional_subnets
+
+  member     = "serviceAccount:${each.value.service_project_number}@cloudservices.gserviceaccount.com"
+  project    = local.main.project_id
+  region     = module.core_helpers.region
+  role       = "roles/compute.networkUser"
+  subnetwork = module.google_network_master_subnets[each.key].name
+}
+
 resource "google_compute_subnetwork_iam_member" "container_engine" {
   for_each = local.regional_subnets
 
@@ -66,4 +76,14 @@ resource "google_compute_subnetwork_iam_member" "container_engine" {
   region     = module.core_helpers.region
   role       = "roles/compute.networkUser"
   subnetwork = module.google_network_subnets[each.key].name
+}
+
+resource "google_compute_subnetwork_iam_member" "container_engine_master" {
+  for_each = local.regional_subnets
+
+  member     = "serviceAccount:service-${each.value.service_project_number}@container-engine-robot.iam.gserviceaccount.com"
+  project    = local.main.project_id
+  region     = module.core_helpers.region
+  role       = "roles/compute.networkUser"
+  subnetwork = module.google_network_master_subnets[each.key].name
 }
