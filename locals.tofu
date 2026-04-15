@@ -190,20 +190,24 @@ locals {
   }
 
   # Team project services
-  # Constructs the list of services for each team project, sourced from pt-logos team configuration
+  # Constructs the list of services for each team project, merging the required baseline with per-team
+  # additional services sourced from pt-logos team configuration
   team_project_services = {
-    for k, v in local.google_projects : k => [
-      "billingbudgets.googleapis.com",
-      "cloudasset.googleapis.com",
-      "cloudbilling.googleapis.com",
-      "cloudresourcemanager.googleapis.com",
-      "compute.googleapis.com",
-      "iam.googleapis.com",
-      "monitoring.googleapis.com",
-      "pubsub.googleapis.com",
-      "securitycenter.googleapis.com",
-      "serviceusage.googleapis.com",
-    ]
+    for k, v in local.google_projects : k => concat(
+      [
+        "billingbudgets.googleapis.com",
+        "cloudasset.googleapis.com",
+        "cloudbilling.googleapis.com",
+        "cloudresourcemanager.googleapis.com",
+        "compute.googleapis.com",
+        "iam.googleapis.com",
+        "monitoring.googleapis.com",
+        "pubsub.googleapis.com",
+        "securitycenter.googleapis.com",
+        "serviceusage.googleapis.com",
+      ],
+      v.services
+    )
   }
 
   # Team subnets
