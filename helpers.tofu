@@ -9,12 +9,8 @@ module "core_helpers" {
 
   # Logos functionality - consolidated into core-helpers
   logos_workspaces = [
-    "pt-arche-main-production",
-    "pt-corpus-main-production",
-    "pt-ekklesia-main-production",
-    "pt-logos-main-production",
+    "pt-kryptos-main-production",
     "pt-pneuma-main-production",
-    "pt-techne-main-production"
   ]
 
   repository = "pt-corpus"
