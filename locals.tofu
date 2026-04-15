@@ -60,19 +60,15 @@ locals {
   }
 
   # Google Projects
-  # Flatten team google_projects into a map keyed by "{team_key}-{description}" for project creation
+  # Teams that have opted in to a Google Cloud project
   google_projects = {
-    for item in flatten([
-      for team_key, team in module.core_helpers.teams : [
-        for description, project in team.google_projects : {
-          description    = description
-          enable_datadog = project.enable_datadog
-          services       = project.services
-          team_key       = team_key
-        }
-      ]
-      if team.enable_workflows
-    ]) : "${item.team_key}-${item.description}" => item
+    for team_key, team in module.core_helpers.teams :
+    team_key => {
+      enable_datadog = team.google_project_enable_datadog
+      services       = team.google_project_services
+      team_key       = team_key
+    }
+    if team.enable_workflows && team.enable_google_project
   }
 
   # Google Projects with Datadog enabled
@@ -86,7 +82,7 @@ locals {
   # Google projects with service accounts
   # Subset of google_projects filtered to those whose team has a corresponding service account
   google_projects_with_service_accounts = {
-    for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), v.team_key)
+    for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), k)
   }
 
   # Kubernetes project services
@@ -181,21 +177,37 @@ locals {
   # Maps team keys to labels, merging core_helpers labels with the team key
   team_labels = { for k, v in module.core_helpers.teams : k => merge(module.core_helpers.labels, { team = k }) }
 
+  # Team project descriptions
+  # Derives the description component of the team key for GCP project naming (e.g., "pt-my-team" → "my-team")
+  team_project_descriptions = {
+    for k, _ in local.google_projects : k => replace(k, "/^[a-z]+-/", "")
+  }
+
+  # Team project prefixes
+  # Derives the prefix component of the team key for GCP project naming (e.g., "pt-kryptos" → "pt")
+  team_project_prefixes = {
+    for k, _ in local.google_projects : k => split("-", k)[0]
+  }
+
   # Team project services
-  # Constructs the list of services for each team project, sourced from pt-logos team configuration
+  # Constructs the list of services for each team project, merging the required baseline with per-team
+  # additional services sourced from pt-logos team configuration
   team_project_services = {
-    for k, v in local.google_projects : k => [
-      "billingbudgets.googleapis.com",
-      "cloudasset.googleapis.com",
-      "cloudbilling.googleapis.com",
-      "cloudresourcemanager.googleapis.com",
-      "compute.googleapis.com",
-      "iam.googleapis.com",
-      "monitoring.googleapis.com",
-      "pubsub.googleapis.com",
-      "securitycenter.googleapis.com",
-      "serviceusage.googleapis.com",
-    ]
+    for k, v in local.google_projects : k => concat(
+      [
+        "billingbudgets.googleapis.com",
+        "cloudasset.googleapis.com",
+        "cloudbilling.googleapis.com",
+        "cloudresourcemanager.googleapis.com",
+        "compute.googleapis.com",
+        "iam.googleapis.com",
+        "monitoring.googleapis.com",
+        "pubsub.googleapis.com",
+        "securitycenter.googleapis.com",
+        "serviceusage.googleapis.com",
+      ],
+      v.services
+    )
   }
 
   # Team subnets
