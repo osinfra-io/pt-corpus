@@ -64,14 +64,9 @@ output "teams" {
   value = {
     for team_key, team in module.core_helpers.teams :
     team_key => merge(team, {
-      google_projects = {
-        for description, project in team.google_projects :
-        description => {
-          id       = module.google_project_teams["${team_key}-${description}"].id
-          services = project.services
-        }
-        if contains(keys(module.google_project_teams), "${team_key}-${description}")
-      }
+      google_project = contains(keys(module.google_project_teams), team_key) ? {
+        id = module.google_project_teams[team_key].id
+      } : null
 
       kubernetes_project = contains(keys(module.google_project_kubernetes), team_key) ? {
         environment = module.core_helpers.env
