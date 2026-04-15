@@ -24,7 +24,7 @@ module "datadog_google_integration_datadog_projects" {
   is_cspm_enabled                    = true
   is_security_command_center_enabled = true
   labels                             = local.team_labels[each.value.team_key]
-  project                            = module.google_projects[each.key].id
+  project                            = module.google_project_teams[each.key].id
 }
 
 module "datadog_google_integration_kubernetes_projects" {
@@ -139,7 +139,7 @@ module "google_project_kubernetes" {
   services                        = local.kubernetes_project_services[each.key]
 }
 
-module "google_projects" {
+module "google_project_teams" {
   source = "github.com/osinfra-io/pt-arche-google-project?ref=8b86debb6614d96cb891b652754693a459e9efbb" # v0.6.10
 
   for_each                        = local.google_projects
@@ -151,7 +151,7 @@ module "google_projects" {
   labels                          = local.team_labels[each.value.team_key]
   monthly_budget_amount           = var.project_monthly_budget_amount
   prefix                          = each.value.team_key
-  services                        = each.value.services
+  services                        = local.team_project_services[each.key]
 }
 
 # Google Storage Bucket Module (osinfra.io)
@@ -522,7 +522,7 @@ resource "google_project_iam_member" "google_project_owners" {
   for_each = local.google_projects_with_service_accounts
 
   member  = "serviceAccount:${google_service_account.github_actions[each.value.team_key].email}"
-  project = module.google_projects[each.key].id
+  project = module.google_project_teams[each.key].id
   role    = "roles/owner"
 }
 

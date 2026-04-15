@@ -67,10 +67,10 @@ output "teams" {
       google_projects = {
         for description, project in team.google_projects :
         description => {
-          id       = module.google_projects["${team_key}-${description}"].id
+          id       = module.google_project_teams["${team_key}-${description}"].id
           services = project.services
         }
-        if contains(keys(module.google_projects), "${team_key}-${description}")
+        if contains(keys(module.google_project_teams), "${team_key}-${description}")
       }
 
       kubernetes_project = contains(keys(module.google_project_kubernetes), team_key) ? {
