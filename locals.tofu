@@ -106,6 +106,7 @@ locals {
         "iamcredentials.googleapis.com",
         "monitoring.googleapis.com",
         "multiclusterservicediscovery.googleapis.com",
+        "pubsub.googleapis.com",
         "securitycenter.googleapis.com",
         "serviceusage.googleapis.com",
         "trafficdirector.googleapis.com"
@@ -179,6 +180,23 @@ locals {
   # Team labels
   # Maps team keys to labels, merging core_helpers labels with the team key
   team_labels = { for k, v in module.core_helpers.teams : k => merge(module.core_helpers.labels, { team = k }) }
+
+  # Team project services
+  # Constructs the list of services for each team project, sourced from pt-logos team configuration
+  team_project_services = {
+    for k, v in local.google_projects : k => [
+      "billingbudgets.googleapis.com",
+      "cloudasset.googleapis.com",
+      "cloudbilling.googleapis.com",
+      "cloudresourcemanager.googleapis.com",
+      "compute.googleapis.com",
+      "iam.googleapis.com",
+      "monitoring.googleapis.com",
+      "pubsub.googleapis.com",
+      "securitycenter.googleapis.com",
+      "serviceusage.googleapis.com",
+    ]
+  }
 
   # Team subnets
   # Extract subnet configurations from cluster definitions in all teams, preserving team association.
