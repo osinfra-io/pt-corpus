@@ -178,9 +178,9 @@ locals {
   team_labels = { for k, v in module.core_helpers.teams : k => merge(module.core_helpers.labels, { team = k }) }
 
   # Team project descriptions
-  # Derives the description component of the team key for GCP project naming (e.g., "pt-kryptos" → "kryptos")
+  # Derives the description component of the team key for GCP project naming (e.g., "pt-my-team" → "my-team")
   team_project_descriptions = {
-    for k, _ in local.google_projects : k => split("-", k)[1]
+    for k, _ in local.google_projects : k => replace(k, "/^[a-z]+-/", "")
   }
 
   # Team project prefixes
