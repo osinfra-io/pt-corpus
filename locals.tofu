@@ -60,19 +60,15 @@ locals {
   }
 
   # Google Projects
-  # Flatten team google_projects into a map keyed by "{team_key}-{description}" for project creation
+  # Teams that have opted in to a Google Cloud project
   google_projects = {
-    for item in flatten([
-      for team_key, team in module.core_helpers.teams : [
-        for description, project in team.google_projects : {
-          description    = description
-          enable_datadog = project.enable_datadog
-          services       = project.services
-          team_key       = team_key
-        }
-      ]
-      if team.enable_workflows
-    ]) : "${item.team_key}-${item.description}" => item
+    for team_key, team in module.core_helpers.teams :
+    team_key => {
+      enable_datadog = team.google_project_enable_datadog
+      services       = team.google_project_services
+      team_key       = team_key
+    }
+    if team.enable_workflows && team.enable_google_project
   }
 
   # Google Projects with Datadog enabled
@@ -86,7 +82,7 @@ locals {
   # Google projects with service accounts
   # Subset of google_projects filtered to those whose team has a corresponding service account
   google_projects_with_service_accounts = {
-    for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), v.team_key)
+    for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), k)
   }
 
   # Kubernetes project services

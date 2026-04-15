@@ -146,11 +146,11 @@ module "google_project_teams" {
   billing_account                 = var.project_billing_account
   cis_2_2_logging_sink_project_id = module.google_project.id
   deletion_policy                 = "DELETE"
-  description                     = replace(each.value.team_key, "/^[a-z]+-/", "")
-  folder_id                       = module.core_helpers.teams[each.value.team_key].environments[local.environment_key]
-  labels                          = local.team_labels[each.value.team_key]
+  description                     = replace(each.key, "/^[a-z]+-/", "")
+  folder_id                       = module.core_helpers.teams[each.key].environments[local.environment_key]
+  labels                          = local.team_labels[each.key]
   monthly_budget_amount           = var.project_monthly_budget_amount
-  prefix                          = split("-", each.value.team_key)[0]
+  prefix                          = split("-", each.key)[0]
   services                        = local.team_project_services[each.key]
 }
 
