@@ -177,6 +177,18 @@ locals {
   # Maps team keys to labels, merging core_helpers labels with the team key
   team_labels = { for k, v in module.core_helpers.teams : k => merge(module.core_helpers.labels, { team = k }) }
 
+  # Team project descriptions
+  # Derives the description component of the team key for GCP project naming (e.g., "pt-kryptos" → "kryptos")
+  team_project_descriptions = {
+    for k, _ in local.google_projects : k => split("-", k)[1]
+  }
+
+  # Team project prefixes
+  # Derives the prefix component of the team key for GCP project naming (e.g., "pt-kryptos" → "pt")
+  team_project_prefixes = {
+    for k, _ in local.google_projects : k => split("-", k)[0]
+  }
+
   # Team project services
   # Constructs the list of services for each team project, sourced from pt-logos team configuration
   team_project_services = {
