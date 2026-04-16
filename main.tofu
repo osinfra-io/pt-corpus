@@ -537,6 +537,18 @@ resource "google_project_iam_member" "kubernetes_project_owners" {
   role    = "roles/owner"
 }
 
+# Kubernetes Project Pneuma Owners
+# Grant the pt-pneuma service account owner role on all other teams' kubernetes projects
+# so pt-pneuma can provision and manage GKE clusters on behalf of all teams.
+
+resource "google_project_iam_member" "kubernetes_project_pneuma_owners" {
+  for_each = local.gke_teams_for_pneuma_access
+
+  member  = "serviceAccount:${google_service_account.github_actions["pt-pneuma"].email}"
+  project = module.google_project_kubernetes[each.key].id
+  role    = "roles/owner"
+}
+
 resource "google_project_iam_member" "multi_cluster_service_agents" {
   for_each = local.teams_with_gke_hub_host
 

@@ -53,6 +53,13 @@ locals {
     ]) : item.repository => item
   }
 
+  # GKE teams for pneuma access
+  # All GKE teams (excluding pt-pneuma itself) whose kubernetes projects pt-pneuma must access
+  # to provision and manage GKE clusters on their behalf
+  gke_teams_for_pneuma_access = {
+    for k, v in local.teams_with_gke_clusters : k => v if k != "pt-pneuma"
+  }
+
   # GKE teams with service accounts
   # Subset of teams_with_gke_clusters filtered to those with a corresponding service account
   gke_teams_with_service_accounts = {
