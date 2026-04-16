@@ -133,7 +133,7 @@ module "google_project_kubernetes" {
   deletion_policy                 = "DELETE"
   description                     = "k8s"
   folder_id                       = module.core_helpers.teams[each.key].environments[local.environment_key]
-  labels                          = local.team_labels[each.key]
+  labels                          = merge(local.team_labels[each.key], { project_type = "kubernetes" })
   monthly_budget_amount           = var.kubernetes_project_monthly_budget_amount
   prefix                          = each.key
   services                        = local.kubernetes_project_services[each.key]
