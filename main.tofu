@@ -133,7 +133,7 @@ module "google_project_kubernetes" {
   deletion_policy                 = "DELETE"
   description                     = "k8s"
   folder_id                       = module.core_helpers.teams[each.key].environments[local.environment_key]
-  labels                          = local.team_labels[each.key]
+  labels                          = merge(local.team_labels[each.key], { "project-type" = "kubernetes" })
   monthly_budget_amount           = var.kubernetes_project_monthly_budget_amount
   prefix                          = each.key
   services                        = local.kubernetes_project_services[each.key]
@@ -533,6 +533,18 @@ resource "google_project_iam_member" "kubernetes_project_owners" {
   for_each = local.gke_teams_with_service_accounts
 
   member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  project = module.google_project_kubernetes[each.key].id
+  role    = "roles/owner"
+}
+
+# Kubernetes Project Pneuma Owners
+# Grant the pt-pneuma service account owner role on all other teams' kubernetes projects
+# so pt-pneuma can provision and manage GKE clusters on behalf of all teams.
+
+resource "google_project_iam_member" "kubernetes_project_pneuma_owners" {
+  for_each = local.gke_teams_for_pneuma_access
+
+  member  = "serviceAccount:${google_service_account.github_actions["pt-pneuma"].email}"
   project = module.google_project_kubernetes[each.key].id
   role    = "roles/owner"
 }
