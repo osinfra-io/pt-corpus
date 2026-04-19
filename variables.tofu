@@ -31,9 +31,9 @@ variable "google_customer_id" {
   type        = string
 }
 
-variable "kubernetes_project_monthly_budget_amount" {
+variable "platform_managed_project_monthly_budget_amount" {
   default     = 5
-  description = "The monthly budget amount in USD to set for Kubernetes projects"
+  description = "The monthly budget amount in USD to set for platform-managed projects"
   type        = number
 }
 

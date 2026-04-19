@@ -27,15 +27,15 @@ module "datadog_google_integration_datadog_projects" {
   project                            = module.google_project_teams[each.key].id
 }
 
-module "datadog_google_integration_kubernetes_projects" {
+module "datadog_google_integration_platform_managed_projects" {
   source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=52c9646bfd977026b3e25cddcb87e65224796ca9" # v0.4.5
 
-  for_each                           = local.datadog_kubernetes_for_each
+  for_each                           = local.datadog_platform_managed_for_each
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true
   is_security_command_center_enabled = true
   labels                             = module.core_helpers.labels
-  project                            = module.google_project_kubernetes[each.key].id
+  project                            = module.google_project_platform_managed[each.key].id
 }
 
 # Google VPC Module (osinfra.io)
@@ -92,11 +92,10 @@ module "google_network_team_dns" {
 # https://github.com/osinfra-io/pt-arche-google-project
 
 module "google_project" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=8b86debb6614d96cb891b652754693a459e9efbb" # v0.6.10
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=5b089b8cf6bee8d8853c855ca9fd9507a902cb51" # v0.7.0
 
   billing_account       = var.project_billing_account
   deletion_policy       = "DELETE"
-  description           = module.core_helpers.project_naming.description
   folder_id             = module.core_helpers.environment_folder_id
   labels                = module.core_helpers.labels
   monthly_budget_amount = var.project_monthly_budget_amount
@@ -124,33 +123,31 @@ module "google_project" {
   ]
 }
 
-module "google_project_kubernetes" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=8b86debb6614d96cb891b652754693a459e9efbb" # v0.6.10
+module "google_project_platform_managed" {
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=5b089b8cf6bee8d8853c855ca9fd9507a902cb51" # v0.7.0
 
-  for_each                        = local.teams_with_gke_clusters
+  for_each                        = local.teams_with_platform_managed_projects
   billing_account                 = var.project_billing_account
   cis_2_2_logging_sink_project_id = module.google_project.id
   deletion_policy                 = "DELETE"
-  description                     = "k8s"
   folder_id                       = module.core_helpers.teams[each.key].environments[local.environment_key]
-  labels                          = merge(local.team_labels[each.key], { "project-type" = "kubernetes" })
-  monthly_budget_amount           = var.kubernetes_project_monthly_budget_amount
+  labels                          = merge(local.team_labels[each.key], { "project-type" = "platform-managed" })
+  monthly_budget_amount           = var.platform_managed_project_monthly_budget_amount
   prefix                          = each.key
-  services                        = local.kubernetes_project_services[each.key]
+  services                        = local.platform_managed_project_services[each.key]
 }
 
 module "google_project_teams" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=8b86debb6614d96cb891b652754693a459e9efbb" # v0.6.10
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=5b089b8cf6bee8d8853c855ca9fd9507a902cb51" # v0.7.0
 
   for_each                        = local.google_projects
   billing_account                 = var.project_billing_account
   cis_2_2_logging_sink_project_id = module.google_project.id
   deletion_policy                 = "DELETE"
-  description                     = local.team_project_descriptions[each.key]
   folder_id                       = module.core_helpers.teams[each.key].environments[local.environment_key]
   labels                          = local.team_labels[each.key]
   monthly_budget_amount           = var.project_monthly_budget_amount
-  prefix                          = local.team_project_prefixes[each.key]
+  prefix                          = split("-", each.key)[0]
   services                        = local.team_project_services[each.key]
 }
 
@@ -489,7 +486,7 @@ resource "google_kms_key_ring" "state_encryption" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam_member
 
 resource "google_project_iam_member" "container_engine_firewall_management" {
-  for_each = local.vpc_service_projects_kubernetes
+  for_each = local.vpc_service_projects_platform_managed
 
   member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
   project = module.google_project.id
@@ -497,7 +494,7 @@ resource "google_project_iam_member" "container_engine_firewall_management" {
 }
 
 resource "google_project_iam_member" "container_engine_service_agent_user" {
-  for_each = local.vpc_service_projects_kubernetes
+  for_each = local.vpc_service_projects_platform_managed
 
   member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
   project = module.google_project.id
@@ -526,26 +523,26 @@ resource "google_project_iam_member" "google_project_owners" {
   role    = "roles/owner"
 }
 
-# Kubernetes Project Owners
-# Grant team service accounts owner role on their kubernetes_projects.
+# Platform-Managed Project Owners
+# Grant team service accounts owner role on their platform-managed projects.
 
-resource "google_project_iam_member" "kubernetes_project_owners" {
+resource "google_project_iam_member" "platform_managed_project_owners" {
   for_each = local.gke_teams_with_service_accounts
 
   member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
-  project = module.google_project_kubernetes[each.key].id
+  project = module.google_project_platform_managed[each.key].id
   role    = "roles/owner"
 }
 
-# Kubernetes Project Pneuma Owners
-# Grant the pt-pneuma service account owner role on all other teams' kubernetes projects
+# Platform-Managed Project Pneuma Owners
+# Grant the pt-pneuma service account owner role on all other teams' platform-managed projects
 # so pt-pneuma can provision and manage GKE clusters on behalf of all teams.
 
-resource "google_project_iam_member" "kubernetes_project_pneuma_owners" {
+resource "google_project_iam_member" "platform_managed_project_pneuma_owners" {
   for_each = local.gke_teams_for_pneuma_access
 
   member  = "serviceAccount:${google_service_account.github_actions["pt-pneuma"].email}"
-  project = module.google_project_kubernetes[each.key].id
+  project = module.google_project_platform_managed[each.key].id
   role    = "roles/owner"
 }
 
@@ -561,11 +558,11 @@ resource "google_project_iam_member" "multi_cluster_service_agents" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_service_identity
 
 resource "google_project_service_identity" "multi_cluster_service_agents" {
-  depends_on = [module.google_project_kubernetes]
+  depends_on = [module.google_project_platform_managed]
   for_each   = local.teams_with_gke_hub_host
   provider   = google-beta # Required for google_project_service_identity
 
-  project = module.google_project_kubernetes[each.key].id
+  project = module.google_project_platform_managed[each.key].id
   service = "multiclusterservicediscovery.googleapis.com"
 }
 
