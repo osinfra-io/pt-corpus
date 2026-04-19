@@ -54,16 +54,25 @@ locals {
   }
 
   # GKE teams for pneuma access
-  # All platform-managed teams (excluding pt-pneuma itself) whose platform-managed projects pt-pneuma must access
-  # to provision and manage GKE clusters on their behalf
+  # Platform-managed teams with GKE clusters (excluding pt-pneuma itself) whose platform-managed projects
+  # pt-pneuma must access to provision and manage GKE clusters on their behalf
   gke_teams_for_pneuma_access = {
-    for k, v in local.teams_with_platform_managed_projects : k => v if k != "pt-pneuma"
+    for k, v in local.teams_with_platform_managed_projects : k => v
+    if k != "pt-pneuma" && length(v.platform_managed_project.kubernetes_engine_locations) > 0
   }
 
   # GKE teams with service accounts
-  # Subset of teams_with_platform_managed_projects filtered to those with a corresponding service account
+  # Subset of teams_with_platform_managed_projects filtered to those with GKE clusters and a corresponding service account
   gke_teams_with_service_accounts = {
-    for k, v in local.teams_with_platform_managed_projects : k => v if contains(keys(local.service_accounts), k)
+    for k, v in local.teams_with_platform_managed_projects : k => v
+    if contains(keys(local.service_accounts), k) && length(v.platform_managed_project.kubernetes_engine_locations) > 0
+  }
+
+  # Platform-managed teams with service accounts
+  # All teams with platform-managed projects (GKE or data services) that also have a service account
+  platform_managed_teams_with_service_accounts = {
+    for k, v in local.teams_with_platform_managed_projects : k => v
+    if contains(keys(local.service_accounts), k)
   }
 
   # Google Projects

@@ -527,7 +527,7 @@ resource "google_project_iam_member" "google_project_owners" {
 # Grant team service accounts owner role on their platform-managed projects.
 
 resource "google_project_iam_member" "platform_managed_project_owners" {
-  for_each = local.gke_teams_with_service_accounts
+  for_each = local.platform_managed_teams_with_service_accounts
 
   member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
   project = module.google_project_platform_managed[each.key].id
