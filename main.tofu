@@ -147,7 +147,7 @@ module "google_project_teams" {
   folder_id                       = module.core_helpers.teams[each.key].environments[local.environment_key]
   labels                          = local.team_labels[each.key]
   monthly_budget_amount           = var.project_monthly_budget_amount
-  prefix                          = split("-", each.key)[0]
+  prefix                          = each.key
   services                        = local.team_project_services[each.key]
 }
 
