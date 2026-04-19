@@ -177,7 +177,7 @@ locals {
   team_dns_subdomains = {
     for team_key, team in module.core_helpers.teams :
     team_key => team.dns_subdomain != null ? team.dns_subdomain : replace(team_key, "/^[a-z]+-/", "")
-    if length(team.google_kubernetes_engine_clusters.locations) > 0
+    if length(team.platform_managed_project.kubernetes_engine_locations) > 0
   }
 
   # Team labels
@@ -211,7 +211,7 @@ locals {
   # Region is extracted from the location key by stripping the zone suffix (e.g., us-east1-b → us-east1).
   team_subnets = merge([
     for team_key, team in module.core_helpers.teams : {
-      for location, cluster in team.google_kubernetes_engine_clusters.locations :
+      for location, cluster in team.platform_managed_project.kubernetes_engine_locations :
       "${team_key}-${location}" => merge(cluster.subnet, {
         region   = regex("^(us-[a-z]+[0-9]+)-[a-z]$", location)[0]
         team_key = team_key
@@ -246,7 +246,7 @@ locals {
       dns_name = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}.osinfra.io." : "${local.team_dns_subdomains[team_key]}.${module.core_helpers.env}.osinfra.io."
       name     = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}-osinfra-io" : "${local.team_dns_subdomains[team_key]}-${module.core_helpers.env}-osinfra-io"
     }
-    if length(team.google_kubernetes_engine_clusters.locations) > 0
+    if length(team.platform_managed_project.kubernetes_engine_locations) > 0
   }
 
   # Teams with platform-managed projects
@@ -256,11 +256,11 @@ locals {
     team_key => merge(team, {
       # Check if any cluster in this team has enable_gke_hub_host = true
       has_gke_hub_host = anytrue([
-        for location, cluster in team.google_kubernetes_engine_clusters.locations :
+        for location, cluster in team.platform_managed_project.kubernetes_engine_locations :
         lookup(cluster, "enable_gke_hub_host", false)
       ])
     })
-    if length(team.google_kubernetes_engine_clusters.locations) > 0
+    if team.has_platform_managed_project
   }
 
   # Teams with GKE Hub Host
@@ -276,7 +276,7 @@ locals {
   teams_with_platform_managed_datadog = {
     for team_key, team in local.teams_with_platform_managed_projects :
     team_key => team
-    if team.enable_kubernetes_datadog
+    if team.enable_platform_managed_datadog
   }
 
   # VPC Service Projects
