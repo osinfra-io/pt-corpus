@@ -2,7 +2,7 @@
 # https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "datadog_google_integration" {
-  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=52c9646bfd977026b3e25cddcb87e65224796ca9" # v0.4.5
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=96d35be7846e15d3ea60c27dab0a6a72e259d3ae" # v0.4.6
 
   lifecycle {
     enabled = var.datadog_enable
@@ -17,7 +17,7 @@ module "datadog_google_integration" {
 }
 
 module "datadog_google_integration_datadog_projects" {
-  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=52c9646bfd977026b3e25cddcb87e65224796ca9" # v0.4.5
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=96d35be7846e15d3ea60c27dab0a6a72e259d3ae" # v0.4.6
 
   for_each                           = local.datadog_google_project_for_each
   api_key                            = var.datadog_api_key
@@ -28,7 +28,7 @@ module "datadog_google_integration_datadog_projects" {
 }
 
 module "datadog_google_integration_platform_managed_projects" {
-  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=52c9646bfd977026b3e25cddcb87e65224796ca9" # v0.4.5
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=96d35be7846e15d3ea60c27dab0a6a72e259d3ae" # v0.4.6
 
   for_each                           = local.datadog_platform_managed_for_each
   api_key                            = var.datadog_api_key
@@ -42,7 +42,7 @@ module "datadog_google_integration_platform_managed_projects" {
 # https://github.com/osinfra-io/pt-arche-google-network
 
 module "google_network_vpc" {
-  source = "github.com/osinfra-io/pt-arche-google-network?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
+  source = "github.com/osinfra-io/pt-arche-google-network?ref=ba20bee164e911915abc3b0f1145993f29199cb2" # v0.3.6
 
   name       = "standard-shared"
   project    = module.google_project.id
@@ -53,7 +53,7 @@ module "google_network_vpc" {
 # https://github.com/osinfra-io/pt-arche-google-network
 
 module "google_network_osinfra_io_dns" {
-  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=ba20bee164e911915abc3b0f1145993f29199cb2" # v0.3.6
 
   dns_name   = local.osinfra_io_dns_zone_name
   labels     = module.core_helpers.labels
@@ -63,7 +63,7 @@ module "google_network_osinfra_io_dns" {
 }
 
 module "google_network_private_dns" {
-  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=ba20bee164e911915abc3b0f1145993f29199cb2" # v0.3.6
 
   dns_name = local.private_dns_zone_name
   labels   = module.core_helpers.labels
@@ -78,7 +78,7 @@ module "google_network_private_dns" {
 }
 
 module "google_network_team_dns" {
-  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=68fb1e3db389fbeebde396ee61ba4ec3832123a7" # v0.3.5
+  source = "github.com/osinfra-io/pt-arche-google-network//dns?ref=ba20bee164e911915abc3b0f1145993f29199cb2" # v0.3.6
 
   for_each   = local.teams_with_dns_zones
   dns_name   = each.value.dns_name
@@ -92,7 +92,7 @@ module "google_network_team_dns" {
 # https://github.com/osinfra-io/pt-arche-google-project
 
 module "google_project" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=5b089b8cf6bee8d8853c855ca9fd9507a902cb51" # v0.7.0
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=dc72cc73addab260dc8cb3df719aa69b66b8b774" # v0.7.1
 
   billing_account       = var.project_billing_account
   deletion_policy       = "DELETE"
@@ -124,7 +124,7 @@ module "google_project" {
 }
 
 module "google_project_platform_managed" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=5b089b8cf6bee8d8853c855ca9fd9507a902cb51" # v0.7.0
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=dc72cc73addab260dc8cb3df719aa69b66b8b774" # v0.7.1
 
   for_each                        = local.teams_with_platform_managed_projects
   billing_account                 = var.project_billing_account
@@ -138,7 +138,7 @@ module "google_project_platform_managed" {
 }
 
 module "google_project_teams" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=5b089b8cf6bee8d8853c855ca9fd9507a902cb51" # v0.7.0
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=dc72cc73addab260dc8cb3df719aa69b66b8b774" # v0.7.1
 
   for_each                        = local.google_projects
   billing_account                 = var.project_billing_account
