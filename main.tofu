@@ -99,7 +99,7 @@ module "google_project" {
   folder_id             = module.core_helpers.environment_folder_id
   labels                = module.core_helpers.labels
   monthly_budget_amount = var.project_monthly_budget_amount
-  prefix                = module.core_helpers.project_naming.prefix
+  prefix                = module.core_helpers.project_naming.team_key
 
   services = [
     "artifactregistry.googleapis.com",
