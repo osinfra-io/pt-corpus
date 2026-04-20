@@ -19,9 +19,9 @@ locals {
   # Resolves the for_each for the google_project_datadog module: enabled only when var.datadog_enable is true
   datadog_google_project_for_each = var.datadog_enable ? local.google_projects_with_datadog : {}
 
-  # Datadog Kubernetes for_each
-  # Resolves the for_each for the kubernetes_datadog module: enabled only when var.datadog_enable is true
-  datadog_kubernetes_for_each = var.datadog_enable ? local.teams_with_kubernetes_datadog : {}
+  # Datadog platform-managed for_each
+  # Resolves the for_each for the platform_managed_datadog module: enabled only when var.datadog_enable is true
+  datadog_platform_managed_for_each = var.datadog_enable ? local.teams_with_platform_managed_datadog : {}
 
   # Enable Cloud Cost Management only in production
   enable_cloud_cost_management = module.core_helpers.env == "prod"
@@ -54,16 +54,25 @@ locals {
   }
 
   # GKE teams for pneuma access
-  # All GKE teams (excluding pt-pneuma itself) whose kubernetes projects pt-pneuma must access
-  # to provision and manage GKE clusters on their behalf
+  # Platform-managed teams with GKE clusters (excluding pt-pneuma itself) whose platform-managed projects
+  # pt-pneuma must access to provision and manage GKE clusters on their behalf
   gke_teams_for_pneuma_access = {
-    for k, v in local.teams_with_gke_clusters : k => v if k != "pt-pneuma"
+    for k, v in local.teams_with_platform_managed_projects : k => v
+    if k != "pt-pneuma" && length(v.platform_managed_project.kubernetes_engine_locations) > 0
   }
 
   # GKE teams with service accounts
-  # Subset of teams_with_gke_clusters filtered to those with a corresponding service account
+  # Subset of teams_with_platform_managed_projects filtered to those with GKE clusters and a corresponding service account
   gke_teams_with_service_accounts = {
-    for k, v in local.teams_with_gke_clusters : k => v if contains(keys(local.service_accounts), k)
+    for k, v in local.teams_with_platform_managed_projects : k => v
+    if contains(keys(local.service_accounts), k) && length(v.platform_managed_project.kubernetes_engine_locations) > 0
+  }
+
+  # Platform-managed teams with service accounts
+  # All teams with platform-managed projects (GKE or data services) that also have a service account
+  platform_managed_teams_with_service_accounts = {
+    for k, v in local.teams_with_platform_managed_projects : k => v
+    if contains(keys(local.service_accounts), k)
   }
 
   # Google Projects
@@ -92,10 +101,10 @@ locals {
     for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), k)
   }
 
-  # Kubernetes project services
-  # Constructs the list of services for each Kubernetes project, conditionally appending GKE Hub services
-  kubernetes_project_services = {
-    for k, v in local.teams_with_gke_clusters : k => concat(
+  # Platform-managed project services
+  # Constructs the list of services for each platform-managed project, conditionally appending GKE Hub services
+  platform_managed_project_services = {
+    for k, v in local.teams_with_platform_managed_projects : k => concat(
       [
         "billingbudgets.googleapis.com",
         "certificatemanager.googleapis.com",
@@ -149,13 +158,13 @@ locals {
   private_dns_zone_name = module.core_helpers.env == "prod" ? "gcp.priv.osinfra.io." : "gcp.priv.${module.core_helpers.env}.osinfra.io."
 
   # Regional subnets
-  # Organize subnets by region for regional deployments, enriched with Kubernetes project numbers
+  # Organize subnets by region for regional deployments, enriched with platform-managed project numbers
   regional_subnets = {
     for region in distinct([for k, v in local.team_subnets : v.region]) :
     region => {
       for subnet_key, subnet in local.team_subnets :
       subnet_key => merge(subnet, {
-        service_project_number = module.google_project_kubernetes[subnet.team_key].number
+        service_project_number = module.google_project_platform_managed[subnet.team_key].number
       })
       if subnet.region == region
     }
@@ -177,24 +186,12 @@ locals {
   team_dns_subdomains = {
     for team_key, team in module.core_helpers.teams :
     team_key => team.dns_subdomain != null ? team.dns_subdomain : replace(team_key, "/^[a-z]+-/", "")
-    if length(team.google_kubernetes_engine_clusters.locations) > 0
+    if length(team.platform_managed_project.kubernetes_engine_locations) > 0
   }
 
   # Team labels
   # Maps team keys to labels, merging core_helpers labels with the team key
   team_labels = { for k, v in module.core_helpers.teams : k => merge(module.core_helpers.labels, { team = k }) }
-
-  # Team project descriptions
-  # Derives the description component of the team key for GCP project naming (e.g., "pt-my-team" → "my-team")
-  team_project_descriptions = {
-    for k, _ in local.google_projects : k => replace(k, "/^[a-z]+-/", "")
-  }
-
-  # Team project prefixes
-  # Derives the prefix component of the team key for GCP project naming (e.g., "pt-kryptos" → "pt")
-  team_project_prefixes = {
-    for k, _ in local.google_projects : k => split("-", k)[0]
-  }
 
   # Team project services
   # Constructs the list of services for each team project, merging the required baseline with per-team
@@ -223,7 +220,7 @@ locals {
   # Region is extracted from the location key by stripping the zone suffix (e.g., us-east1-b → us-east1).
   team_subnets = merge([
     for team_key, team in module.core_helpers.teams : {
-      for location, cluster in team.google_kubernetes_engine_clusters.locations :
+      for location, cluster in team.platform_managed_project.kubernetes_engine_locations :
       "${team_key}-${location}" => merge(cluster.subnet, {
         region   = regex("^(us-[a-z]+[0-9]+)-[a-z]$", location)[0]
         team_key = team_key
@@ -238,7 +235,7 @@ locals {
     team_key => {
       registry_readers = [
         "group:${team.identity_groups["registry-readers"].email}",
-        "serviceAccount:${module.google_project_kubernetes[team_key].number}-compute@developer.gserviceaccount.com"
+        "serviceAccount:${module.google_project_platform_managed[team_key].number}-compute@developer.gserviceaccount.com"
       ]
       registry_writers = [
         "group:${team.identity_groups["registry-writers"].email}"
@@ -258,46 +255,46 @@ locals {
       dns_name = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}.osinfra.io." : "${local.team_dns_subdomains[team_key]}.${module.core_helpers.env}.osinfra.io."
       name     = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}-osinfra-io" : "${local.team_dns_subdomains[team_key]}-${module.core_helpers.env}-osinfra-io"
     }
-    if length(team.google_kubernetes_engine_clusters.locations) > 0
+    if length(team.platform_managed_project.kubernetes_engine_locations) > 0
   }
 
-  # Teams with GKE Clusters
-  # Identify teams that need Kubernetes projects
-  teams_with_gke_clusters = {
+  # Teams with platform-managed projects
+  # Identify teams that need platform-managed projects (GKE clusters, data services, etc.)
+  teams_with_platform_managed_projects = {
     for team_key, team in module.core_helpers.teams :
     team_key => merge(team, {
       # Check if any cluster in this team has enable_gke_hub_host = true
       has_gke_hub_host = anytrue([
-        for location, cluster in team.google_kubernetes_engine_clusters.locations :
+        for location, cluster in team.platform_managed_project.kubernetes_engine_locations :
         lookup(cluster, "enable_gke_hub_host", false)
       ])
     })
-    if length(team.google_kubernetes_engine_clusters.locations) > 0
+    if team.has_platform_managed_project
   }
 
   # Teams with GKE Hub Host
-  # Subset of teams_with_gke_clusters where the team has a GKE Hub host cluster
+  # Subset of teams_with_platform_managed_projects where the team has a GKE Hub host cluster
   teams_with_gke_hub_host = {
-    for team_key, team in local.teams_with_gke_clusters :
+    for team_key, team in local.teams_with_platform_managed_projects :
     team_key => team
     if team.has_gke_hub_host
   }
 
-  # Teams with Kubernetes Datadog enabled
-  # Subset of teams_with_gke_clusters where the team has opted in to Datadog integration
-  teams_with_kubernetes_datadog = {
-    for team_key, team in local.teams_with_gke_clusters :
+  # Teams with platform-managed Datadog enabled
+  # Subset of teams_with_platform_managed_projects where the team has opted in to Datadog integration
+  teams_with_platform_managed_datadog = {
+    for team_key, team in local.teams_with_platform_managed_projects :
     team_key => team
-    if team.enable_kubernetes_datadog
+    if team.enable_platform_managed_datadog
   }
 
   # VPC Service Projects
-  # Automatically include all Kubernetes projects as VPC service projects
-  # Merges manually configured service projects with Kubernetes projects
+  # Automatically include all platform-managed projects as VPC service projects
+  # Merges manually configured service projects with platform-managed projects
   # Keys must be statically known at plan time, so team_key is used instead of project.id
   vpc_service_projects = merge(
     {
-      for team_key, project in module.google_project_kubernetes :
+      for team_key, project in module.google_project_platform_managed :
       team_key => {
         id     = project.id
         number = project.number
@@ -312,11 +309,11 @@ locals {
     }
   )
 
-  # VPC Service Projects for Kubernetes
-  # Only Kubernetes projects that need GKE-specific IAM permissions
+  # VPC Service Projects for platform-managed
+  # Only platform-managed projects that need GKE-specific IAM permissions
   # Keys must be statically known at plan time, so team_key is used instead of project.id
-  vpc_service_projects_kubernetes = {
-    for team_key, project in module.google_project_kubernetes :
+  vpc_service_projects_platform_managed = {
+    for team_key, project in module.google_project_platform_managed :
     team_key => {
       id     = project.id
       number = project.number

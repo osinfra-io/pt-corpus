@@ -1,11 +1,11 @@
 # Output Values
 # https://opentofu.org/docs/language/values/outputs
 
-output "kubernetes_projects" {
-  description = "All Kubernetes projects created for each team with complete details"
+output "platform_managed_projects" {
+  description = "All platform-managed projects created for each team with complete details"
 
   value = {
-    for team_key, project in module.google_project_kubernetes :
+    for team_key, project in module.google_project_platform_managed :
     team_key => {
       environment = module.core_helpers.env
       id          = project.id
@@ -59,7 +59,7 @@ output "storage_buckets" {
 }
 
 output "teams" {
-  description = "All teams data from logos workspaces with Kubernetes projects enriched"
+  description = "All teams data from logos workspaces with platform-managed projects enriched"
 
   value = {
     for team_key, team in module.core_helpers.teams :
@@ -68,10 +68,10 @@ output "teams" {
         id = module.google_project_teams[team_key].id
       } : null
 
-      kubernetes_project = contains(keys(module.google_project_kubernetes), team_key) ? {
+      platform_managed_project = contains(keys(module.google_project_platform_managed), team_key) ? {
         environment = module.core_helpers.env
-        id          = module.google_project_kubernetes[team_key].id
-        number      = module.google_project_kubernetes[team_key].number
+        id          = module.google_project_platform_managed[team_key].id
+        number      = module.google_project_platform_managed[team_key].number
       } : null
     })
   }

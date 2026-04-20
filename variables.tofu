@@ -31,10 +31,15 @@ variable "google_customer_id" {
   type        = string
 }
 
-variable "kubernetes_project_monthly_budget_amount" {
+variable "platform_managed_project_monthly_budget_amount" {
   default     = 5
-  description = "The monthly budget amount in USD to set for Kubernetes projects"
+  description = "The monthly budget amount in USD to set for platform-managed projects"
   type        = number
+
+  validation {
+    condition     = var.platform_managed_project_monthly_budget_amount > 0
+    error_message = "The platform_managed_project_monthly_budget_amount must be greater than 0."
+  }
 }
 
 variable "osinfra_io_ns_delegations" {
@@ -58,6 +63,11 @@ variable "project_monthly_budget_amount" {
   default     = 5
   description = "The monthly budget amount in USD to set for the project"
   type        = number
+
+  validation {
+    condition     = var.project_monthly_budget_amount > 0
+    error_message = "The project_monthly_budget_amount must be greater than 0."
+  }
 }
 
 # These three state_* variables are required for early variable evaluation for backend and provider configuration.
