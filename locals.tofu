@@ -68,13 +68,6 @@ locals {
     if contains(keys(local.service_accounts), k) && length(v.platform_managed_project.kubernetes_engine_locations) > 0
   }
 
-  # Platform-managed teams with service accounts
-  # All teams with platform-managed projects (GKE or data services) that also have a service account
-  platform_managed_teams_with_service_accounts = {
-    for k, v in local.teams_with_platform_managed_projects : k => v
-    if contains(keys(local.service_accounts), k)
-  }
-
   # Google Projects
   # Teams that have opted in to a Google Cloud project
   google_projects = {
@@ -100,6 +93,28 @@ locals {
   google_projects_with_service_accounts = {
     for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), k)
   }
+
+  # Logos state readers group - centrally managed in pt-logos, referenced here for membership management
+  logos_state_readers_group_name = module.core_helpers.teams["pt-logos"].identity_groups["state-readers"].name
+
+  # Non-corpus service accounts
+  # Service accounts for teams other than pt-corpus, used for browser and state reader group memberships
+  non_corpus_service_accounts = {
+    for k, v in local.service_accounts : k => v if k != "pt-corpus"
+  }
+
+  # OpenTofu State Management
+  # Create a map of teams that need OpenTofu state management infrastructure (state bucket, KMS, storage IAM)
+  opentofu_state_management = {
+    for team_key, team in module.core_helpers.teams :
+    team_key => {}
+    if team.enable_opentofu_state_management && team.enable_workflows
+  }
+
+  # osinfra.io DNS zone name and DNS name
+  # Constructs the environment-level public zone identifier (e.g., osinfra.io in prod, sb.osinfra.io in sandbox)
+  osinfra_io_dns_name      = module.core_helpers.env == "prod" ? "osinfra-io" : "${module.core_helpers.env}-osinfra-io"
+  osinfra_io_dns_zone_name = module.core_helpers.env == "prod" ? "osinfra.io." : "${module.core_helpers.env}.osinfra.io."
 
   # Platform-managed project services
   # Constructs the list of services for each platform-managed project, conditionally appending GKE Hub services
@@ -130,27 +145,12 @@ locals {
     )
   }
 
-  # Logos state readers group - centrally managed in pt-logos, referenced here for membership management
-  logos_state_readers_group_name = module.core_helpers.teams["pt-logos"].identity_groups["state-readers"].name
-
-  # Non-corpus service accounts
-  # Service accounts for teams other than pt-corpus, used for browser and state reader group memberships
-  non_corpus_service_accounts = {
-    for k, v in local.service_accounts : k => v if k != "pt-corpus"
+  # Platform-managed teams with service accounts
+  # All teams with platform-managed projects (GKE or data services) that also have a service account
+  platform_managed_teams_with_service_accounts = {
+    for k, v in local.teams_with_platform_managed_projects : k => v
+    if contains(keys(local.service_accounts), k)
   }
-
-  # OpenTofu State Management
-  # Create a map of teams that need OpenTofu state management infrastructure (state bucket, KMS, storage IAM)
-  opentofu_state_management = {
-    for team_key, team in module.core_helpers.teams :
-    team_key => {}
-    if team.enable_opentofu_state_management && team.enable_workflows
-  }
-
-  # osinfra.io DNS zone name and DNS name
-  # Constructs the environment-level public zone identifier (e.g., osinfra.io in prod, sb.osinfra.io in sandbox)
-  osinfra_io_dns_name      = module.core_helpers.env == "prod" ? "osinfra-io" : "${module.core_helpers.env}-osinfra-io"
-  osinfra_io_dns_zone_name = module.core_helpers.env == "prod" ? "osinfra.io." : "${module.core_helpers.env}.osinfra.io."
 
   # Private DNS zone name and DNS name
   # Used by the private DNS module to construct environment-specific zone identifiers

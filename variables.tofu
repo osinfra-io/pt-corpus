@@ -31,17 +31,6 @@ variable "google_customer_id" {
   type        = string
 }
 
-variable "platform_managed_project_monthly_budget_amount" {
-  default     = 5
-  description = "The monthly budget amount in USD to set for platform-managed projects"
-  type        = number
-
-  validation {
-    condition     = var.platform_managed_project_monthly_budget_amount > 0
-    error_message = "The platform_managed_project_monthly_budget_amount must be greater than 0."
-  }
-}
-
 variable "osinfra_io_ns_delegations" {
   default     = []
   description = "NS delegation records to add to the production osinfra.io zone delegating to environment-level zones (e.g., sb.osinfra.io and nonprod.osinfra.io)"
@@ -51,6 +40,17 @@ variable "osinfra_io_ns_delegations" {
     rrdatas      = list(string)
     ttl          = number
   }))
+}
+
+variable "platform_managed_project_monthly_budget_amount" {
+  default     = 5
+  description = "The monthly budget amount in USD to set for platform-managed projects"
+  type        = number
+
+  validation {
+    condition     = var.platform_managed_project_monthly_budget_amount > 0
+    error_message = "The platform_managed_project_monthly_budget_amount must be greater than 0."
+  }
 }
 
 variable "project_billing_account" {
