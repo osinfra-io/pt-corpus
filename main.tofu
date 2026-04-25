@@ -119,6 +119,7 @@ module "google_project" {
     "securitycenter.googleapis.com",
     "servicenetworking.googleapis.com",
     "serviceusage.googleapis.com",
+    "sqladmin.googleapis.com",
     "sts.googleapis.com"
   ]
 }
