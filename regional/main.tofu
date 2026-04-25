@@ -6,14 +6,14 @@ module "google_cloud_sql" {
 
   for_each = local.teams_with_cloud_sql_in_region
 
-  database_version    = each.value.platform_managed_project.cloud_sql.database_version
+  database_version    = each.value.cloud_sql.database_version
   deletion_protection = module.core_helpers.env == "prod"
   host_project_id     = local.main.project_id
   instance_name       = each.key
   labels              = merge(module.core_helpers.labels, { team = each.key })
-  machine_tier        = each.value.platform_managed_project.cloud_sql.machine_tier
+  machine_tier        = each.value.cloud_sql.machine_tier
   network             = local.main.vpc_name
-  project             = local.main.platform_managed_projects[each.key].id
+  project             = each.value.id
   region              = module.core_helpers.region
 }
 

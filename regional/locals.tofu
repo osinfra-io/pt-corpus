@@ -10,12 +10,11 @@ locals {
   regional_subnets = lookup(local.main.regional_subnets, module.core_helpers.region, {})
 
   # Teams with Cloud SQL in the current region
-  # Filter platform-managed teams that have Cloud SQL configured for the current deployment region
+  # Filter platform-managed projects that have Cloud SQL configured for the current deployment region
   teams_with_cloud_sql_in_region = {
-    for team_key, team in module.core_helpers.teams :
-    team_key => team
-    if length(tolist(team.platform_managed_project.cloud_sql.regions)) > 0 &&
-    contains(tolist(team.platform_managed_project.cloud_sql.regions), module.core_helpers.region) &&
-    contains(keys(local.main.platform_managed_projects), team_key)
+    for team_key, project in local.main.platform_managed_projects :
+    team_key => project
+    if length(tolist(project.cloud_sql.regions)) > 0 &&
+    contains(tolist(project.cloud_sql.regions), module.core_helpers.region)
   }
 }
