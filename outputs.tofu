@@ -7,6 +7,7 @@ output "platform_managed_projects" {
   value = {
     for team_key, project in module.google_project_platform_managed :
     team_key => {
+      cloud_sql   = module.core_helpers.teams[team_key].platform_managed_project.cloud_sql
       environment = module.core_helpers.env
       id          = project.id
       number      = project.number

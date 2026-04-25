@@ -40,6 +40,13 @@ terraform {
     google = {
       source = "hashicorp/google"
     }
+
+    # Random Provider
+    # https://search.opentofu.org/provider/hashicorp/random/latest/docs
+
+    random = {
+      source = "hashicorp/random"
+    }
   }
 }
 

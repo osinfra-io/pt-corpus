@@ -92,7 +92,7 @@ module "google_network_team_dns" {
 # https://github.com/osinfra-io/pt-arche-google-project
 
 module "google_project" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=dc72cc73addab260dc8cb3df719aa69b66b8b774" # v0.7.1
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=3e0113c1a331ea399eeac2fd7528516c682eef4f" # v0.7.3
 
   billing_account       = var.project_billing_account
   deletion_policy       = "DELETE"
@@ -119,12 +119,13 @@ module "google_project" {
     "securitycenter.googleapis.com",
     "servicenetworking.googleapis.com",
     "serviceusage.googleapis.com",
+    "sqladmin.googleapis.com",
     "sts.googleapis.com"
   ]
 }
 
 module "google_project_platform_managed" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=dc72cc73addab260dc8cb3df719aa69b66b8b774" # v0.7.1
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=3e0113c1a331ea399eeac2fd7528516c682eef4f" # v0.7.3
 
   for_each                        = local.teams_with_platform_managed_projects
   billing_account                 = var.project_billing_account
@@ -138,7 +139,7 @@ module "google_project_platform_managed" {
 }
 
 module "google_project_teams" {
-  source = "github.com/osinfra-io/pt-arche-google-project?ref=dc72cc73addab260dc8cb3df719aa69b66b8b774" # v0.7.1
+  source = "github.com/osinfra-io/pt-arche-google-project?ref=3e0113c1a331ea399eeac2fd7528516c682eef4f" # v0.7.3
 
   for_each                        = local.google_projects
   billing_account                 = var.project_billing_account

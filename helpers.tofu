@@ -13,7 +13,8 @@ module "core_helpers" {
     "pt-kryptos-main-production",
     "pt-logos-main-production",
     "pt-pneuma-main-production",
-    "pt-techne-main-production"
+    "pt-techne-main-production",
+    "st-ethos-main-production"
   ]
 
   repository = "pt-corpus"

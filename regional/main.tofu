@@ -1,3 +1,22 @@
+# Google Cloud SQL Module (osinfra.io)
+# https://github.com/osinfra-io/pt-arche-google-cloud-sql
+
+module "google_cloud_sql" {
+  source = "github.com/osinfra-io/pt-arche-google-cloud-sql//regional?ref=4445c35bbe2f679c301ac5f335b9ad03821527e1" # v0.2.7
+
+  for_each = local.teams_with_cloud_sql_in_region
+
+  database_version    = each.value.cloud_sql.database_version
+  deletion_protection = module.core_helpers.env == "prod"
+  host_project_id     = local.main.project_id
+  instance_name       = each.key
+  labels              = merge(module.core_helpers.labels, { team = each.key })
+  machine_tier        = each.value.cloud_sql.machine_tier
+  network             = local.main.vpc_name
+  project             = each.value.id
+  region              = module.core_helpers.region
+}
+
 # Google Subnet Module (osinfra.io)
 # https://github.com/osinfra-io/pt-arche-google-network
 
