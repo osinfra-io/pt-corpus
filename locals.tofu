@@ -138,7 +138,7 @@ locals {
         "serviceusage.googleapis.com",
         "trafficdirector.googleapis.com"
       ],
-      contains(keys(local.teams_with_cloud_sql), k) ? ["sqladmin.googleapis.com"] : [],
+      contains(keys(local.teams_with_cloud_sql), k) ? ["servicenetworking.googleapis.com", "sqladmin.googleapis.com"] : [],
       v.has_gke_hub_host ? [
         "gkehub.googleapis.com",
         "multiclusteringress.googleapis.com"
