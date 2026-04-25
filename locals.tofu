@@ -252,7 +252,7 @@ locals {
   teams_with_cloud_sql = {
     for team_key, team in local.teams_with_platform_managed_projects :
     team_key => team
-    if try(team.platform_managed_project.cloud_sql != null, false)
+    if length(tolist(team.platform_managed_project.cloud_sql.regions)) > 0
   }
 
   # Teams with DNS Zones
