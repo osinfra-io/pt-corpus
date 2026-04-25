@@ -138,6 +138,7 @@ locals {
         "serviceusage.googleapis.com",
         "trafficdirector.googleapis.com"
       ],
+      contains(keys(local.teams_with_cloud_sql), k) ? ["sqladmin.googleapis.com"] : [],
       v.has_gke_hub_host ? [
         "gkehub.googleapis.com",
         "multiclusteringress.googleapis.com"
@@ -244,6 +245,14 @@ locals {
     if contains(keys(team.identity_groups), "registry-readers") &&
     contains(keys(team.identity_groups), "registry-writers") &&
     team.enable_workflows
+  }
+
+  # Teams with Cloud SQL
+  # Teams that have opted in to Cloud SQL in their platform-managed project
+  teams_with_cloud_sql = {
+    for team_key, team in local.teams_with_platform_managed_projects :
+    team_key => team
+    if try(team.platform_managed_project.cloud_sql != null, false)
   }
 
   # Teams with DNS Zones
