@@ -14,7 +14,8 @@ module "core_helpers" {
     "pt-logos-main-production",
     "pt-pneuma-main-production",
     "pt-techne-main-production",
-    "st-ethos-main-production"
+    "st-ethos-main-production",
+    "st-foo-main-production"
   ]
 
   repository = "pt-corpus"
