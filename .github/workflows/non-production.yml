@@ -22,7 +22,7 @@ permissions:
 jobs:
   main:
     name: "Main"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@c7c6d4128c11a4787102a130b4b46533c2b30c98 # v0.3.4
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5f1739a6197fab1022f433ee526e7647ab4fae6d # v0.3.5
     if: github.event.head_commit.author.username != 'dependabot[bot]'
     with:
       checkout_ref: ${{ github.ref }}
@@ -41,7 +41,7 @@ jobs:
 
   us_east1:
     name: "Regional: us-east1"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@c7c6d4128c11a4787102a130b4b46533c2b30c98 # v0.3.4
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5f1739a6197fab1022f433ee526e7647ab4fae6d # v0.3.5
     needs: main
     with:
       checkout_ref: ${{ github.ref }}
@@ -57,7 +57,7 @@ jobs:
 
   us_east4:
     name: "Regional: us-east4"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@c7c6d4128c11a4787102a130b4b46533c2b30c98 # v0.3.4
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5f1739a6197fab1022f433ee526e7647ab4fae6d # v0.3.5
     needs: main
     with:
       checkout_ref: ${{ github.ref }}
