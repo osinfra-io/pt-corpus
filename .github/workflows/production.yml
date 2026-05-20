@@ -25,7 +25,7 @@ permissions:
 jobs:
   main:
     name: "Main"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@d51fc205b914b7dde9cf54fab2d7e0059ddfa8c0 # v0.3.6
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@8af74f7c3eee27cc3751fd92d2b22db45d6b40d5 # v0.3.7
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
@@ -47,7 +47,7 @@ jobs:
 
   us_east1:
     name: "Regional: us-east1"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@d51fc205b914b7dde9cf54fab2d7e0059ddfa8c0 # v0.3.6
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@8af74f7c3eee27cc3751fd92d2b22db45d6b40d5 # v0.3.7
     needs: main
     with:
       checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -63,7 +63,7 @@ jobs:
 
   us_east4:
     name: "Regional: us-east4"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@d51fc205b914b7dde9cf54fab2d7e0059ddfa8c0 # v0.3.6
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@8af74f7c3eee27cc3751fd92d2b22db45d6b40d5 # v0.3.7
     needs: main
     with:
       checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
