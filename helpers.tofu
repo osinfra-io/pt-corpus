@@ -9,6 +9,7 @@ module "core_helpers" {
 
   # Logos functionality - consolidated into core-helpers
   logos_workspaces = [
+    "et-delete-main-production",
     "pt-corpus-main-production",
     "pt-kryptos-main-production",
     "pt-logos-main-production",
