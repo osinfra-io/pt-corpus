@@ -234,10 +234,19 @@ locals {
   teams_with_artifact_registries = {
     for team_key, team in module.core_helpers.teams :
     team_key => {
-      registry_readers = [
-        "group:${team.identity_groups["registry-readers"].email}",
-        "serviceAccount:${module.google_project_platform_managed[team_key].number}-compute@developer.gserviceaccount.com"
-      ]
+      registry_readers = concat(
+        [
+          "group:${team.identity_groups["registry-readers"].email}"
+        ],
+        # GKE Hub hosts serve member clusters that pull images from the hub team's registry
+        # (e.g. Istio images). Include the registry-readers group of every other team with
+        # a platform-managed project so their node SAs (which join that group) have access.
+        try(local.teams_with_platform_managed_projects[team_key].has_gke_hub_host, false) ? [
+          for k, other_team in local.teams_with_platform_managed_projects :
+          "group:${module.core_helpers.teams[k].identity_groups["registry-readers"].email}"
+          if k != team_key && contains(keys(module.core_helpers.teams[k].identity_groups), "registry-readers")
+        ] : []
+      )
       registry_writers = [
         "group:${team.identity_groups["registry-writers"].email}"
       ]
