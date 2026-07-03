@@ -242,9 +242,9 @@ locals {
         # (e.g. Istio images). Include the registry-readers group of every other team with
         # a platform-managed project so their node SAs (which join that group) have access.
         try(local.teams_with_platform_managed_projects[team_key].has_gke_hub_host, false) ? [
-          for k, other_team in module.core_helpers.teams :
-          "group:${other_team.identity_groups["registry-readers"].email}"
-          if k != team_key && contains(keys(other_team.identity_groups), "registry-readers")
+          for k, other_team in local.teams_with_platform_managed_projects :
+          "group:${module.core_helpers.teams[k].identity_groups["registry-readers"].email}"
+          if k != team_key && contains(keys(module.core_helpers.teams[k].identity_groups), "registry-readers")
         ] : []
       )
       registry_writers = [
