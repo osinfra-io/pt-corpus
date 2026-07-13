@@ -2,7 +2,7 @@
 # https://github.com/osinfra-io/pt-arche-google-cloud-sql
 
 module "google_cloud_sql" {
-  source = "github.com/osinfra-io/pt-arche-google-cloud-sql//regional?ref=4445c35bbe2f679c301ac5f335b9ad03821527e1" # v0.2.7
+  source = "github.com/osinfra-io/pt-arche-google-cloud-sql//regional?ref=a1325d4daffb3e5b7f18c48d9780509cc33d5aec" # v0.2.8
 
   for_each = local.teams_with_cloud_sql_in_region
 
@@ -21,7 +21,7 @@ module "google_cloud_sql" {
 # https://github.com/osinfra-io/pt-arche-google-network
 
 module "google_network_master_subnets" {
-  source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=ba20bee164e911915abc3b0f1145993f29199cb2" # v0.3.6
+  source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=a27322fd1ee0c4dc11cbfe34d3266a99ff8f075f" # v0.3.7
 
   for_each                 = local.regional_subnets
   ip_cidr_range            = each.value.master_ipv4_cidr_block
@@ -32,7 +32,7 @@ module "google_network_master_subnets" {
 }
 
 module "google_network_subnets" {
-  source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=ba20bee164e911915abc3b0f1145993f29199cb2" # v0.3.6
+  source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=a27322fd1ee0c4dc11cbfe34d3266a99ff8f075f" # v0.3.7
 
   for_each                 = local.regional_subnets
   ip_cidr_range            = each.value.ip_cidr_range
@@ -54,7 +54,7 @@ module "google_network_subnets" {
 }
 
 module "google_network_cloud_nat" {
-  source = "github.com/osinfra-io/pt-arche-google-network//regional/nat?ref=ba20bee164e911915abc3b0f1145993f29199cb2" # v0.3.6
+  source = "github.com/osinfra-io/pt-arche-google-network//regional/nat?ref=a27322fd1ee0c4dc11cbfe34d3266a99ff8f075f" # v0.3.7
 
   depends_on = [
     module.google_network_subnets
