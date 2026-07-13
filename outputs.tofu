@@ -86,10 +86,9 @@ output "vpc_name" {
 output "workload_identity_pools" {
   description = "Workload Identity Pools created for external authentication"
   value = {
-    for key, pool in google_iam_workload_identity_pool.this :
-    key => {
-      name                      = pool.name
-      workload_identity_pool_id = pool.workload_identity_pool_id
+    (google_iam_workload_identity_pool.this.workload_identity_pool_id) = {
+      name                      = google_iam_workload_identity_pool.this.name
+      workload_identity_pool_id = google_iam_workload_identity_pool.this.workload_identity_pool_id
     }
   }
 }
@@ -97,10 +96,9 @@ output "workload_identity_pools" {
 output "workload_identity_providers" {
   description = "Workload Identity Pool Providers created for OIDC authentication"
   value = {
-    for key, provider in google_iam_workload_identity_pool_provider.this :
-    key => {
-      name                               = provider.name
-      workload_identity_pool_provider_id = provider.workload_identity_pool_provider_id
+    (google_iam_workload_identity_pool_provider.this.workload_identity_pool_provider_id) = {
+      name                               = google_iam_workload_identity_pool_provider.this.name
+      workload_identity_pool_provider_id = google_iam_workload_identity_pool_provider.this.workload_identity_pool_provider_id
     }
   }
 }

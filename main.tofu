@@ -19,7 +19,7 @@ module "datadog_google_integration" {
 module "datadog_google_integration_datadog_projects" {
   source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=96d35be7846e15d3ea60c27dab0a6a72e259d3ae" # v0.4.6
 
-  for_each                           = local.datadog_google_project_for_each
+  for_each                           = var.datadog_enable ? local.google_projects_with_datadog : {}
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true
   is_security_command_center_enabled = true
@@ -30,7 +30,7 @@ module "datadog_google_integration_datadog_projects" {
 module "datadog_google_integration_platform_managed_projects" {
   source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=96d35be7846e15d3ea60c27dab0a6a72e259d3ae" # v0.4.6
 
-  for_each                           = local.datadog_platform_managed_for_each
+  for_each                           = var.datadog_enable ? local.teams_with_platform_managed_datadog : {}
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true
   is_security_command_center_enabled = true
@@ -392,35 +392,51 @@ resource "google_dns_record_set" "team_ns_delegations" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/iam_workload_identity_pool
 
 resource "google_iam_workload_identity_pool" "this" {
-  for_each = local.workload_identity
-
-  description               = "Workload Identity Pool for ${each.value.display_name}"
-  disabled                  = lookup(each.value, "disabled", false)
-  display_name              = each.value.display_name
+  description               = "Workload Identity Pool for GitHub Actions"
+  display_name              = "GitHub Actions"
   project                   = module.google_project.id
-  workload_identity_pool_id = each.key
+  workload_identity_pool_id = "github-actions"
 }
 
 # IAM Workload Identity Pool Provider Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/iam_workload_identity_pool_provider
 
 resource "google_iam_workload_identity_pool_provider" "this" {
-  for_each = local.workload_identity
+  # An attribute condition is a Common Expression Language (CEL) expression that can check assertion attributes and
+  # target attributes. If the attribute condition evaluates to true for a given credential, the credential is accepted.
+  # Otherwise, the credential is rejected.
+  #
+  # Some of the claims embedded in the GitHub Actions OIDC token are not guaranteed to be unique, and tokens issued by
+  # other GitHub organizations or repositories may contain the same values, allowing them to establish an identity.
+  # To protect against this situation, always use an attribute condition to restrict access to tokens issued by your
+  # GitHub organization.
+  #
+  # GitHub guarantees the following ID to be unique and never re-used. This will protect against cybersquatting attacks.
+  #
+  # To get the organization id, you can run the following curl command with a token that has the read:org scope against
+  # your existing organization:
+  #
+  # curl -H "Authorization: token $GITHUB_READ_ORG_TOKEN" https://api.github.com/orgs/osinfra-io
+  attribute_condition = module.core_helpers.env == "sb" ? "assertion.repository_owner_id==\"104685378\"" : "assertion.repository_owner_id==\"104685378\" && (${join(" || ", local.github_actions_ref_conditions)})"
 
-  attribute_condition = each.value.attribute_condition
-  attribute_mapping   = each.value.attribute_mapping
-  description         = "Workload Identity Pool Provider for ${each.value.display_name}"
-  disabled            = lookup(each.value, "disabled", false)
-  display_name        = "${each.value.display_name} OIDC"
+  # The tokens issued by your external identity provider contain one or more attributes. Some identity providers refer
+  # to these attributes as claims. An attribute mapping defines how to derive the value of the Google STS token attribute
+  # from an external token.
+  attribute_mapping = {
+    "attribute.repository" = "assertion.repository"
+    "google.subject"       = "assertion.sub"
+  }
+
+  description  = "Workload Identity Pool Provider for GitHub Actions"
+  display_name = "GitHub Actions OIDC"
 
   oidc {
-    allowed_audiences = lookup(each.value, "allowed_audiences", [])
-    issuer_uri        = each.value.issuer_uri
+    issuer_uri = "https://token.actions.githubusercontent.com"
   }
 
   project                            = module.google_project.id
-  workload_identity_pool_id          = google_iam_workload_identity_pool.this[each.key].workload_identity_pool_id
-  workload_identity_pool_provider_id = "${each.key}-oidc"
+  workload_identity_pool_id          = google_iam_workload_identity_pool.this.workload_identity_pool_id
+  workload_identity_pool_provider_id = "github-actions-oidc"
 }
 
 # Google KMS Crypto Key Resource
@@ -487,7 +503,7 @@ resource "google_kms_key_ring" "state_encryption" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_project_iam_member
 
 resource "google_project_iam_member" "container_engine_firewall_management" {
-  for_each = local.vpc_service_projects_platform_managed
+  for_each = module.google_project_platform_managed
 
   member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
   project = module.google_project.id
@@ -495,7 +511,7 @@ resource "google_project_iam_member" "container_engine_firewall_management" {
 }
 
 resource "google_project_iam_member" "container_engine_service_agent_user" {
-  for_each = local.vpc_service_projects_platform_managed
+  for_each = module.google_project_platform_managed
 
   member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
   project = module.google_project.id
@@ -584,7 +600,7 @@ resource "google_service_account" "github_actions" {
 resource "google_service_account_iam_member" "github_actions" {
   for_each = local.github_repositories
 
-  member             = "principalSet://iam.googleapis.com/projects/${module.google_project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.this["github-actions"].workload_identity_pool_id}/attribute.repository/osinfra-io/${each.value.repository}"
+  member             = "principalSet://iam.googleapis.com/projects/${module.google_project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.this.workload_identity_pool_id}/attribute.repository/osinfra-io/${each.value.repository}"
   role               = "roles/iam.workloadIdentityUser"
   service_account_id = google_service_account.github_actions[each.value.name].id
 }
