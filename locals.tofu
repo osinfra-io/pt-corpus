@@ -15,14 +15,6 @@ locals {
   # Browser group - centrally managed in pt-logos, referenced here for membership management
   browser_group_name = module.core_helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browsers"].name
 
-  # Datadog Google project for_each
-  # Resolves the for_each for the google_project_datadog module: enabled only when var.datadog_enable is true
-  datadog_google_project_for_each = var.datadog_enable ? local.google_projects_with_datadog : {}
-
-  # Datadog platform-managed for_each
-  # Resolves the for_each for the platform_managed_datadog module: enabled only when var.datadog_enable is true
-  datadog_platform_managed_for_each = var.datadog_enable ? local.teams_with_platform_managed_datadog : {}
-
   # Enable Cloud Cost Management only in production
   enable_cloud_cost_management = module.core_helpers.env == "prod"
 
@@ -326,54 +318,4 @@ locals {
       }
     }
   )
-
-  # VPC Service Projects for platform-managed
-  # Only platform-managed projects that need GKE-specific IAM permissions
-  # Keys must be statically known at plan time, so team_key is used instead of project.id
-  vpc_service_projects_platform_managed = {
-    for team_key, project in module.google_project_platform_managed :
-    team_key => {
-      id     = project.id
-      number = project.number
-    }
-  }
-
-  # Workload Identity
-  # Configuration for external identity provider authentication
-
-  workload_identity = {
-
-    "github-actions" = {
-
-      # An attribute condition is a Common Expression Language (CEL) expression that can check assertion attributes and
-      # target attributes. If the attribute condition evaluates to true for a given credential, the credential is accepted.
-      # Otherwise, the credential is rejected.
-
-      # Some of the claims embedded in the GitHub Actions OIDC token are not guaranteed to be unique, and tokens issued by
-      # other GitHub organizations or repositories may contain the same values, allowing them to establish an identity.
-      # To protect against this situation, always use an attribute condition to restrict access to tokens issued by your
-      # GitHub organization.
-
-      # GitHub guarantees the following ID to be unique and never re-used. This will protect against cybersquatting attacks.
-
-      # To get the organization id, you can run the following curl command with a token that has the read:org scope against
-      # your existing organization:
-
-      # curl -H "Authorization: token $GITHUB_READ_ORG_TOKEN" https://api.github.com/orgs/osinfra-io
-
-      attribute_condition = module.core_helpers.env == "sb" ? "assertion.repository_owner_id==\"104685378\"" : "assertion.repository_owner_id==\"104685378\" && (${join(" || ", local.github_actions_ref_conditions)})"
-
-      # The tokens issued by your external identity provider contain one or more attributes. Some identity providers refer
-      # to these attributes as claims. An attribute mapping defines how to derive the value of the Google STS token attribute
-      # from an external token.
-
-      attribute_mapping = {
-        "attribute.repository" = "assertion.repository"
-        "google.subject"       = "assertion.sub"
-      }
-
-      display_name = "GitHub Actions"
-      issuer_uri   = "https://token.actions.githubusercontent.com"
-    }
-  }
 }

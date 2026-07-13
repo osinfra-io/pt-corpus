@@ -2,6 +2,16 @@
 # https://opentofu.org/docs/language/moved
 
 moved {
+  from = google_iam_workload_identity_pool.this["github-actions"]
+  to   = google_iam_workload_identity_pool.this
+}
+
+moved {
+  from = google_iam_workload_identity_pool_provider.this["github-actions"]
+  to   = google_iam_workload_identity_pool_provider.this
+}
+
+moved {
   from = module.google_projects
   to   = module.google_project_teams
 }
