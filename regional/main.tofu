@@ -114,7 +114,7 @@ resource "google_dns_record_set" "cloud_sql" {
   for_each = local.cloud_sql_instances_in_region
 
   managed_zone = local.main.private_dns_zone.name
-  name         = "${each.value.instance_key}.${module.core_helpers.region}.${each.value.team_key}.${local.main.private_dns_zone.dns_name}"
+  name         = "${each.value.instance_key}.${module.core_helpers.region}.sql.${each.value.team_key}.${local.main.private_dns_zone.dns_name}"
   project      = local.main.project_id
   rrdatas      = [module.google_cloud_sql[each.key].private_ip_address]
   ttl          = 300
