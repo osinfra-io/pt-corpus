@@ -21,6 +21,14 @@ output "osinfra_io_dns_zone" {
   value       = module.google_network_osinfra_io_dns
 }
 
+output "private_dns_zone" {
+  description = "The environment private DNS zone, for regional deployments to create records against"
+  value = {
+    dns_name = local.private_dns_zone_name
+    name     = local.private_dns_name
+  }
+}
+
 output "project_id" {
   description = "The project ID"
   value       = module.google_project.id
