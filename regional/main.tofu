@@ -106,3 +106,17 @@ resource "google_compute_subnetwork_iam_member" "container_engine_master" {
   role       = "roles/compute.networkUser"
   subnetwork = module.google_network_master_subnets[each.key].name
 }
+
+# DNS Record Set Resource
+# https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/dns_record_set
+
+resource "google_dns_record_set" "cloud_sql" {
+  for_each = local.teams_with_cloud_sql_in_region
+
+  managed_zone = local.main.private_dns_zone.name
+  name         = "${each.key}-cloud-sql.${local.main.private_dns_zone.dns_name}"
+  project      = local.main.project_id
+  rrdatas      = [module.google_cloud_sql[each.key].private_ip_address]
+  ttl          = 300
+  type         = "A"
+}
