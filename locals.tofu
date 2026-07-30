@@ -249,11 +249,11 @@ locals {
   }
 
   # Teams with Cloud SQL
-  # Teams that have opted in to Cloud SQL in their platform-managed project
+  # Teams that have opted in to at least one Cloud SQL instance in their platform-managed project
   teams_with_cloud_sql = {
     for team_key, team in local.teams_with_platform_managed_projects :
     team_key => team
-    if length(tolist(team.platform_managed_project.cloud_sql.regions)) > 0
+    if length(try(team.platform_managed_project.cloud_sql, {})) > 0
   }
 
   # Teams with DNS Zones
