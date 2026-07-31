@@ -11,11 +11,13 @@ locals {
 
   # Cloud SQL instances in the current region
   # Flatten each platform-managed project's cloud_sql map (keyed by team-chosen instance name) into
-  # one entry per instance that includes the current region, keyed by team_key-instance_key
+  # one entry per instance that includes the current region, keyed by a jsonencode([team_key,
+  # instance_key]) tuple so the composite key can never collide (a plain hyphen join is ambiguous,
+  # e.g. team "a" + instance "b-c" and team "a-b" + instance "c" both yield "a-b-c").
   cloud_sql_instances_in_region = merge([
     for team_key, project in local.main.platform_managed_projects : {
       for instance_key, instance in project.cloud_sql :
-      "${team_key}-${instance_key}" => {
+      jsonencode([team_key, instance_key]) => {
         instance     = instance
         instance_key = instance_key
         project_id   = project.id

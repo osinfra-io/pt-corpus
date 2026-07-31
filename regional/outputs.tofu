@@ -2,7 +2,7 @@
 # https://opentofu.org/docs/language/values/outputs
 
 output "cloud_sql_instances" {
-  description = "Cloud SQL instances created in this region, keyed by team_key-instance_key"
+  description = "Cloud SQL instances created in this region, keyed by a jsonencode([team_key, instance_key]) tuple"
   value = {
     for key, sql in module.google_cloud_sql :
     key => {

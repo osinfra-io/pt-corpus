@@ -113,6 +113,13 @@ resource "google_compute_subnetwork_iam_member" "container_engine_master" {
 resource "google_dns_record_set" "cloud_sql" {
   for_each = local.cloud_sql_instances_in_region
 
+  lifecycle {
+    precondition {
+      condition     = can(regex("^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$", each.value.instance_key))
+      error_message = "Cloud SQL instance key ${each.value.instance_key} is used as a DNS label and must be a valid RFC 1035 label: lowercase letters, digits and hyphens, starting with a letter, not ending with a hyphen, and at most 63 characters."
+    }
+  }
+
   managed_zone = local.main.private_dns_zone.name
   name         = "${each.value.instance_key}.${module.core_helpers.region}.sql.${each.value.team_key}.${local.main.private_dns_zone.dns_name}"
   project      = local.main.project_id
