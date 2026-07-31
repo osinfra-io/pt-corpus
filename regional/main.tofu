@@ -4,16 +4,16 @@
 module "google_cloud_sql" {
   source = "github.com/osinfra-io/pt-arche-google-cloud-sql//regional?ref=a1325d4daffb3e5b7f18c48d9780509cc33d5aec" # v0.2.8
 
-  for_each = local.teams_with_cloud_sql_in_region
+  for_each = local.cloud_sql_instances_in_region
 
-  database_version    = each.value.cloud_sql.database_version
+  database_version    = each.value.instance.database_version
   deletion_protection = module.core_helpers.env == "prod"
   host_project_id     = local.main.project_id
-  instance_name       = each.key
-  labels              = merge(module.core_helpers.labels, { team = each.key })
-  machine_tier        = each.value.cloud_sql.machine_tier
+  instance_name       = each.value.instance_key
+  labels              = merge(module.core_helpers.labels, { team = each.value.team_key })
+  machine_tier        = each.value.instance.machine_tier
   network             = local.main.vpc_name
-  project             = each.value.id
+  project             = each.value.project_id
   region              = module.core_helpers.region
 }
 
@@ -111,10 +111,17 @@ resource "google_compute_subnetwork_iam_member" "container_engine_master" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/dns_record_set
 
 resource "google_dns_record_set" "cloud_sql" {
-  for_each = local.teams_with_cloud_sql_in_region
+  for_each = local.cloud_sql_instances_in_region
+
+  lifecycle {
+    precondition {
+      condition     = can(regex("^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$", each.value.instance_key))
+      error_message = "Cloud SQL instance key ${each.value.instance_key} is used as a DNS label and must be a valid RFC 1035 label: lowercase letters, digits and hyphens, starting with a letter, not ending with a hyphen, and at most 63 characters."
+    }
+  }
 
   managed_zone = local.main.private_dns_zone.name
-  name         = "${each.key}-cloud-sql.${local.main.private_dns_zone.dns_name}"
+  name         = "${each.value.instance_key}.${module.core_helpers.region}.sql.${each.value.team_key}.${local.main.private_dns_zone.dns_name}"
   project      = local.main.project_id
   rrdatas      = [module.google_cloud_sql[each.key].private_ip_address]
   ttl          = 300
