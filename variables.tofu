@@ -25,12 +25,6 @@ variable "datadog_enable" {
   type        = bool
 }
 
-variable "google_customer_id" {
-  default     = "C01hd34v8"
-  description = "The unique customer ID assigned to you when you signed up for Google Workspace or Cloud Identity. You can look up this ID in your Admin console"
-  type        = string
-}
-
 variable "osinfra_io_ns_delegations" {
   default     = []
   description = "NS delegation records to add to the production osinfra.io zone delegating to environment-level zones (e.g., sb.osinfra.io and nonprod.osinfra.io)"
