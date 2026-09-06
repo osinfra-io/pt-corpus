@@ -48,7 +48,21 @@ provider "registry.opentofu.org/hashicorp/google" {
 provider "registry.opentofu.org/hashicorp/google-beta" {
   version = "8.1.0"
   hashes = [
+    "h1:+1SDpbMz9qC9j/o7tBjq8tjxjyxnbFV1VpTdAEWcMYM=",
+    "h1:IUK4wEdor0ttuxwmSAW1ndj7NbcVJOslgHoUsuSKQ7o=",
+    "h1:N3cZas5AhRsQJwdKZ5n6OruIZgMWu0j9UXb4zSIoVdQ=",
+    "h1:X2tAn4LFluF1aHeSzcZd78+YUjr5B1wxWYD1dYfDfv4=",
+    "h1:co2bty8zCxUspLTvSbLbMg6bBAh1ggBSRQFpAxlqFVc=",
     "h1:ei49DhQI3/p6Id1jWVMc7OsZoHcTBMsww88kZ+6Oo9A=",
+    "h1:ejayluB4v6hUbF1YOIuoDWNhkJjuP/ZNa4FOXzkHmuQ=",
+    "h1:msSFdBCr7K/4nFI1A9Rj/ho+2qeLn+VEoZB1dLOdWzA=",
+    "h1:nFU1JTG3T8uDNDYVyqIC+QsfNg1qjl6+GvF7R1FEip8=",
+    "h1:p8KiR1qgME0H2yV0uBmRdfihIJZqXKKI0bj0gYgF4C0=",
+    "h1:pOli0vlSqmMEtAgZiLBvGY7MLL9LYfGmFUbo4CeRoAk=",
+    "h1:tIwuaLeTTvW5kTgEi2osLXXXoPrKI6iVX8RQReMc17U=",
+    "h1:vNV5oDLgqKWvXUUa/14ro2/mkK7gzo3U8yOspmtkaHM=",
+    "h1:xesD0/g+HxNnvzQ4cp/vouIkkUStKL64NhNXyIDgOPQ=",
+    "h1:yER1GKsVhMLU+i/IrWLzWLgzejLDAJLAovqr7g7Aqu4=",
     "zh:0857c6bd0ab057cb8da2a4b784a577ca64ec698d23cf0b71c51633b332a02a8e",
     "zh:094f8717583fc4ca0be7b48b1821b64be536c8c26f3e4e6e54a066afa839a7cf",
     "zh:0ea1107afe30cec337259a25bd351d4b4fc3b858251a5d7d7bfef000f68d1723",

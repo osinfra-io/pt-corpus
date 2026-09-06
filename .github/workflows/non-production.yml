@@ -39,34 +39,23 @@ jobs:
         -var=datadog_api_key=${{ secrets.DATADOG_API_KEY }}
         -var=datadog_app_key=${{ secrets.DATADOG_APP_KEY }}
 
-  us_east1:
-    name: "Regional: us-east1"
+  regional:
+    name: "Regional: ${{ matrix.region }}"
     uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@66e04fe1c5a017238caf7be3d544a0a66b918dd1 # v0.5.5
     needs: main
+    strategy:
+      matrix:
+        include:
+          - region: us-east1
+          - region: us-east4
     with:
       checkout_ref: ${{ github.ref }}
-      github_environment: "Non-Production: Regional - us-east1"
+      github_environment: "Non-Production: Regional - ${{ matrix.region }}"
       service_account: pt-corpus-github@pt-corpus-tf61-nonprod.iam.gserviceaccount.com
       opentofu_kms_encryption_key: projects/pt-corpus-tf61-nonprod/locations/us/keyRings/state-encryption/cryptoKeys/default
-      opentofu_plan_args: -var-file=environments/us-east1-non-production.tfvars
+      opentofu_plan_args: -var-file=environments/${{ matrix.region }}-non-production.tfvars
       opentofu_state_bucket: pt-corpus-state-nonprod
       opentofu_version: ${{ vars.OPENTOFU_VERSION }}
-      opentofu_workspace: us-east1-non-production
-      working_directory: regional
-      workload_identity_provider: projects/640681940147/locations/global/workloadIdentityPools/github-actions/providers/github-actions-oidc
-
-  us_east4:
-    name: "Regional: us-east4"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@66e04fe1c5a017238caf7be3d544a0a66b918dd1 # v0.5.5
-    needs: main
-    with:
-      checkout_ref: ${{ github.ref }}
-      github_environment: "Non-Production: Regional - us-east4"
-      service_account: pt-corpus-github@pt-corpus-tf61-nonprod.iam.gserviceaccount.com
-      opentofu_kms_encryption_key: projects/pt-corpus-tf61-nonprod/locations/us/keyRings/state-encryption/cryptoKeys/default
-      opentofu_plan_args: -var-file=environments/us-east4-non-production.tfvars
-      opentofu_state_bucket: pt-corpus-state-nonprod
-      opentofu_version: ${{ vars.OPENTOFU_VERSION }}
-      opentofu_workspace: us-east4-non-production
+      opentofu_workspace: ${{ matrix.region }}-non-production
       working_directory: regional
       workload_identity_provider: projects/640681940147/locations/global/workloadIdentityPools/github-actions/providers/github-actions-oidc

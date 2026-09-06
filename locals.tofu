@@ -2,18 +2,12 @@
 # https://opentofu.org/docs/language/values/locals
 
 locals {
-  # Billing users group - centrally managed in pt-logos, referenced here for membership management
-  billing_users_group_name = module.core_helpers.teams["pt-logos"].billing_users_group.name
-
   # Billing users manager role for_each
   # Determines whether each service account gets the MANAGER role in the billing users group.
   # Only the pt-corpus service account is granted MANAGER; all other teams get an empty list (MEMBER only).
   billing_users_manager_for_each = {
     for k, v in local.service_accounts : k => k == "pt-corpus" ? [1] : []
   }
-
-  # Browser group - centrally managed in pt-logos, referenced here for membership management
-  browser_group_name = module.core_helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browsers"].name
 
   # Enable Cloud Cost Management only in production
   enable_cloud_cost_management = module.core_helpers.env == "prod"
@@ -53,13 +47,6 @@ locals {
     if k != "pt-pneuma" && length(v.platform_managed_project.kubernetes_engine_locations) > 0
   }
 
-  # GKE teams with service accounts
-  # Subset of teams_with_platform_managed_projects filtered to those with GKE clusters and a corresponding service account
-  gke_teams_with_service_accounts = {
-    for k, v in local.teams_with_platform_managed_projects : k => v
-    if contains(keys(local.service_accounts), k) && length(v.platform_managed_project.kubernetes_engine_locations) > 0
-  }
-
   # Google Projects
   # Teams that have opted in to a Google Cloud project
   google_projects = {
@@ -79,15 +66,6 @@ locals {
     key => project
     if project.enable_datadog
   }
-
-  # Google projects with service accounts
-  # Subset of google_projects filtered to those whose team has a corresponding service account
-  google_projects_with_service_accounts = {
-    for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), k)
-  }
-
-  # Logos state readers group - centrally managed in pt-logos, referenced here for membership management
-  logos_state_readers_group_name = module.core_helpers.teams["pt-logos"].identity_groups["state-readers"].name
 
   # Non-corpus service accounts
   # Service accounts for teams other than pt-corpus, used for browser and state reader group memberships
@@ -136,13 +114,6 @@ locals {
         "multiclusteringress.googleapis.com"
       ] : []
     )
-  }
-
-  # Platform-managed teams with service accounts
-  # All teams with platform-managed projects (GKE or data services) that also have a service account
-  platform_managed_teams_with_service_accounts = {
-    for k, v in local.teams_with_platform_managed_projects : k => v
-    if contains(keys(local.service_accounts), k)
   }
 
   # Private DNS zone name and DNS name
@@ -279,7 +250,7 @@ locals {
         lookup(cluster, "enable_gke_hub_host", false)
       ])
     })
-    if team.has_platform_managed_project
+    if team.platform_managed_project != null
   }
 
   # Teams with GKE Hub Host
