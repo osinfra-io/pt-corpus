@@ -46,6 +46,7 @@ jobs:
     if: github.actor != 'dependabot[bot]'
     needs: main
     strategy:
+      fail-fast: false
       matrix:
         include:
           - region: us-east1
