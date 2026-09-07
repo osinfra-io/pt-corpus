@@ -264,7 +264,7 @@ resource "google_cloud_identity_group_membership" "browsers" {
   for_each = local.non_corpus_service_accounts
 
   create_ignore_already_exists = true
-  group                        = local.browser_group_name
+  group                        = module.core_helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browsers"].name
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
@@ -283,7 +283,7 @@ resource "google_cloud_identity_group_membership" "github_actions" {
   for_each = local.service_accounts
 
   create_ignore_already_exists = true
-  group                        = local.billing_users_group_name
+  group                        = module.core_helpers.teams["pt-logos"].billing_users_group.name
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
@@ -311,7 +311,7 @@ resource "google_cloud_identity_group_membership" "logos_state_readers" {
   for_each = local.non_corpus_service_accounts
 
   create_ignore_already_exists = true
-  group                        = local.logos_state_readers_group_name
+  group                        = module.core_helpers.teams["pt-logos"].identity_groups["state-readers"].name
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
@@ -522,7 +522,7 @@ resource "google_project_iam_member" "container_engine_service_agent_user" {
 # Teams with Kubernetes clusters need to manage DNS records for their Istio gateways.
 
 resource "google_project_iam_member" "dns_records_admins_gke_teams" {
-  for_each = local.gke_teams_with_service_accounts
+  for_each = { for k, v in local.teams_with_platform_managed_projects : k => v if contains(keys(local.service_accounts), k) && length(v.platform_managed_project.kubernetes_engine_locations) > 0 }
 
   member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
   project = module.google_project.id
@@ -533,7 +533,7 @@ resource "google_project_iam_member" "dns_records_admins_gke_teams" {
 # Grant team service accounts owner role on their google_projects.
 
 resource "google_project_iam_member" "google_project_owners" {
-  for_each = local.google_projects_with_service_accounts
+  for_each = { for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), k) }
 
   member  = "serviceAccount:${google_service_account.github_actions[each.value.team_key].email}"
   project = module.google_project_teams[each.key].id
@@ -544,7 +544,7 @@ resource "google_project_iam_member" "google_project_owners" {
 # Grant team service accounts owner role on their platform-managed projects.
 
 resource "google_project_iam_member" "platform_managed_project_owners" {
-  for_each = local.platform_managed_teams_with_service_accounts
+  for_each = { for k, v in local.teams_with_platform_managed_projects : k => v if contains(keys(local.service_accounts), k) }
 
   member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
   project = module.google_project_platform_managed[each.key].id
