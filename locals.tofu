@@ -236,7 +236,7 @@ locals {
       dns_name = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}.osinfra.io." : "${local.team_dns_subdomains[team_key]}.${module.core_helpers.env}.osinfra.io."
       name     = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}-osinfra-io" : "${local.team_dns_subdomains[team_key]}-${module.core_helpers.env}-osinfra-io"
     }
-    if length(team.platform_managed_project.kubernetes_engine_locations) > 0
+    if length(try(team.platform_managed_project.kubernetes_engine_locations, {})) > 0
   }
 
   # Teams with platform-managed projects
