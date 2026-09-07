@@ -150,7 +150,7 @@ locals {
   team_dns_subdomains = {
     for team_key, team in module.core_helpers.teams :
     team_key => team.dns_subdomain != null ? team.dns_subdomain : replace(team_key, "/^[a-z]+-/", "")
-    if length(team.platform_managed_project.kubernetes_engine_locations) > 0
+    if length(try(team.platform_managed_project.kubernetes_engine_locations, {})) > 0
   }
 
   # Team labels
@@ -184,7 +184,7 @@ locals {
   # Region is extracted from the location key by stripping the zone suffix (e.g., us-east1-b → us-east1).
   team_subnets = merge([
     for team_key, team in module.core_helpers.teams : {
-      for location, cluster in team.platform_managed_project.kubernetes_engine_locations :
+      for location, cluster in try(team.platform_managed_project.kubernetes_engine_locations, {}) :
       "${team_key}-${location}" => merge(cluster.subnet, {
         region   = regex("^(us-[a-z]+[0-9]+)-[a-z]$", location)[0]
         team_key = team_key
@@ -236,7 +236,7 @@ locals {
       dns_name = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}.osinfra.io." : "${local.team_dns_subdomains[team_key]}.${module.core_helpers.env}.osinfra.io."
       name     = module.core_helpers.env == "prod" ? "${local.team_dns_subdomains[team_key]}-osinfra-io" : "${local.team_dns_subdomains[team_key]}-${module.core_helpers.env}-osinfra-io"
     }
-    if length(team.platform_managed_project.kubernetes_engine_locations) > 0
+    if length(try(team.platform_managed_project.kubernetes_engine_locations, {})) > 0
   }
 
   # Teams with platform-managed projects
