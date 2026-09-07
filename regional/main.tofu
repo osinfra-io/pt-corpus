@@ -32,7 +32,7 @@ module "google_network_master_subnets" {
 }
 
 module "google_network_subnets" {
-  source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=a27322fd1ee0c4dc11cbfe34d3266a99ff8f075f" # v0.3.7
+  source = "github.com/osinfra-io/pt-arche-google-network//regional?ref=fbecf064da106bbac58e64c6be7eb521d642025e" # v0.3.9
 
   for_each                 = local.regional_subnets
   ip_cidr_range            = each.value.ip_cidr_range
