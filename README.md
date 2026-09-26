@@ -2,13 +2,17 @@
 
 [![Dependabot](https://img.shields.io/github/actions/workflow/status/osinfra-io/pt-corpus/dependabot.yml?style=for-the-badge&logo=github&color=2088FF&label=Dependabot)](https://github.com/osinfra-io/pt-corpus/actions/workflows/dependabot.yml) [![Datadog Security Enabled](https://img.shields.io/badge/Datadog%20Security-Enabled-632CA6?style=for-the-badge&logo=datadog)](https://app.datadoghq.com/security/code-security/repositories?repository_id=pt-corpus)
 
-## 📄 Repository Description
+## Purpose
 
-This repository contains the Infrastructure as Code (IaC) that shapes the Corpus domain — the embodied layer of the platform where order takes form. In the wider hierarchy of the Platform Team, Corpus serves as the stratum where the abstract principles of Logos are translated into tangible, reliable infrastructure.
+Corpus turns Logos team definitions into governed Google Cloud foundations. It provisions projects, shared networking, DNS, Artifact Registry, workload identity, encrypted OpenTofu state, Cloud SQL, and Datadog integrations across sandbox, non-production, and production.
 
-Here, Google Cloud projects are called into being according to shared patterns; CIS-aligned safeguards establish the boundaries that keep chaos at bay; and Datadog observability forms the eyes of attention through which the system perceives and regulates itself.
+## Consumer contract
 
-The Corpus layer is where structure becomes real, where governance becomes flesh, and where the platform’s foundational energies are harnessed so teams can build, act, and create within a world made stable enough for meaningful work.
+| Consumers request | Corpus provides |
+| --- | --- |
+| Project enablement, required APIs, registry access, DNS, workload identity, and supported managed data services | CIS-aligned projects, Shared VPC connectivity, regional subnets and NAT, delegated DNS, Artifact Registry, CI/CD identities, encrypted state, and private managed-service connectivity |
+
+Consumers do not manage shared VPC, state buckets, KMS, or platform IAM directly. Pneuma consumes Corpus project, network, DNS, and identity outputs to create Kubernetes workload environments.
 
 ### 🛠️ Tools
 
@@ -33,7 +37,7 @@ Links to documentation and other resources required to develop and iterate in th
 
 ## 🔄 Deployment Dependency Graph
 
-Each workflow (sandbox, non-production, production) deploys a `main` workspace first, then runs the regional jobs in parallel. Two regions are deployed: **us-east1** and **us-east4**.
+Each environment deploys `main-{environment}` first, then `us-east1-{environment}` and `us-east4-{environment}` in parallel. Pull requests deploy sandbox, merges to `main` deploy non-production, and a successful non-production workflow promotes to production.
 
 ```mermaid
 flowchart LR
