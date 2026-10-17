@@ -2,30 +2,14 @@ terraform {
   # State and Plan Encryption
   # https://opentofu.org/docs/language/state/encryption
 
+  # The default key provider, method, and enforced plan/state encryption are supplied by the
+  # called workflow through TF_ENCRYPTION and merged with this configuration.
+
   encryption {
-    key_provider "gcp_kms" "default" {
-      key_length         = 32
-      kms_encryption_key = var.state_kms_encryption_key
-    }
-
-    method "aes_gcm" "default" {
-      keys = key_provider.gcp_kms.default
-    }
-
-    plan {
-      enforced = true
-      method   = method.aes_gcm.default
-    }
-
     remote_state_data_sources {
       default {
         method = method.aes_gcm.default
       }
-    }
-
-    state {
-      enforced = true
-      method   = method.aes_gcm.default
     }
   }
 

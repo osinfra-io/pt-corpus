@@ -23,7 +23,7 @@ permissions:
 jobs:
   main:
     name: "Main"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@66e04fe1c5a017238caf7be3d544a0a66b918dd1 # v0.5.5
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@f896997141ccd237ba0360aa30feaa0d1ff21e4f # v0.6.0
     if: github.actor != 'dependabot[bot]'
     with:
       checkout_ref: ${{ github.ref }}
@@ -42,7 +42,7 @@ jobs:
 
   regional:
     name: "Regional: ${{ matrix.region }}"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@66e04fe1c5a017238caf7be3d544a0a66b918dd1 # v0.5.5
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@f896997141ccd237ba0360aa30feaa0d1ff21e4f # v0.6.0
     if: github.actor != 'dependabot[bot]'
     needs: main
     strategy:
