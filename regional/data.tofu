@@ -10,5 +10,5 @@ data "terraform_remote_state" "main" {
     prefix             = "pt-corpus"
   }
 
-  workspace = "main-${module.core_helpers.environment}"
+  workspace = local.main_workspace
 }
