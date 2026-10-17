@@ -9,12 +9,47 @@ locals {
     for k, v in local.service_accounts : k => k == "pt-corpus" ? [1] : []
   }
 
+  # Browsers group name
+  # The pt-corpus browsers identity group for the current environment
+  browsers_group_name = module.core_helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browsers"].name
+
+  # Cloud Storage service agent member
+  cloud_storage_service_account_member = "serviceAccount:service-${module.google_project.number}@gs-project-accounts.iam.gserviceaccount.com"
+
+  # Container Engine robot members
+  # Keyed by team; the GKE service agent of each platform-managed project
+  container_engine_robot_members = {
+    for k, v in module.google_project_platform_managed : k => "serviceAccount:service-${v.number}@container-engine-robot.iam.gserviceaccount.com"
+  }
+
+  # Datadog integration for_each maps
+  # Empty unless Datadog is enabled
+  datadog_platform_managed_projects = var.datadog_enable ? local.teams_with_platform_managed_datadog : {}
+  datadog_team_projects             = var.datadog_enable ? local.google_projects_with_datadog : {}
+
+  # DNS records admin for teams with GKE clusters
+  dns_records_admins_gke_teams = {
+    for k, v in local.teams_with_platform_managed_projects : k => v
+    if contains(keys(local.service_accounts), k) && length(v.platform_managed_project.kubernetes_engine_locations) > 0
+  }
+
   # Enable Cloud Cost Management only in production
   enable_cloud_cost_management = module.core_helpers.env == "prod"
+
+  # Enable the Docker Hub remote registry when any team has an Artifact Registry
+  enable_docker_remote_registry = length(local.teams_with_artifact_registries) > 0
 
   # Environment key for logos lookup (title case with hyphens preserved)
   # Converts workspace environment (e.g., "non-production") to logos format (e.g., "Non-Production")
   environment_key = title(module.core_helpers.environment)
+
+  # GitHub Actions WIF provider attribute condition
+  github_actions_attribute_condition = module.core_helpers.env == "sb" ? "assertion.repository_owner_id==\"104685378\"" : "assertion.repository_owner_id==\"104685378\" && (${join(" || ", local.github_actions_ref_conditions)})"
+
+  # GitHub Actions service account members
+  github_actions_members = {
+    for k, sa in google_service_account.github_actions : k => "serviceAccount:${sa.email}"
+  }
 
   # CEL ref assertions for the github-actions WIF provider (non-sandbox only).
   # Add entries here to permit additional refs (e.g. release tags).
@@ -29,6 +64,7 @@ locals {
     for item in flatten([
       for team_key, team in module.core_helpers.teams : [
         for repo_key, repo in team.github_repositories : {
+          member     = "principalSet://iam.googleapis.com/projects/${module.google_project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.this.workload_identity_pool_id}/attribute.repository/osinfra-io/${repo_key}"
           name       = team_key
           repository = repo_key
           team_key   = team_key
@@ -45,6 +81,12 @@ locals {
   gke_teams_for_pneuma_access = {
     for k, v in local.teams_with_platform_managed_projects : k => v
     if k != "pt-pneuma" && length(v.platform_managed_project.kubernetes_engine_locations) > 0
+  }
+
+  # Google project owners
+  # Team service accounts that own their Google projects
+  google_project_owners = {
+    for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), k)
   }
 
   # Google Projects
@@ -67,6 +109,14 @@ locals {
     if project.enable_datadog
   }
 
+  # Logos state readers group member
+  logos_state_readers_member = "group:${module.core_helpers.teams["pt-logos"].identity_groups["state-readers"].email}"
+
+  # Multi-cluster service agent members
+  multi_cluster_service_agent_members = {
+    for k, v in google_project_service_identity.multi_cluster_service_agents : k => "serviceAccount:${v.email}"
+  }
+
   # Non-corpus service accounts
   # Service accounts for teams other than pt-corpus, used for browser and state reader group memberships
   non_corpus_service_accounts = {
@@ -77,7 +127,9 @@ locals {
   # Create a map of teams that need OpenTofu state management infrastructure (state bucket, KMS, storage IAM)
   opentofu_state_management = {
     for team_key, team in module.core_helpers.teams :
-    team_key => {}
+    team_key => {
+      bucket_name = "${team_key}-state-${module.core_helpers.env}"
+    }
     if team.enable_opentofu_state_management && team.enable_workflows
   }
 
@@ -85,6 +137,91 @@ locals {
   # Constructs the environment-level public zone identifier (e.g., osinfra.io in prod, sb.osinfra.io in sandbox)
   osinfra_io_dns_name      = module.core_helpers.env == "prod" ? "osinfra-io" : "${module.core_helpers.env}-osinfra-io"
   osinfra_io_dns_zone_name = module.core_helpers.env == "prod" ? "osinfra.io." : "${module.core_helpers.env}.osinfra.io."
+
+  # osinfra.io NS delegations
+  # Keyed by delegation name, with the trailing dot required for the record name
+  osinfra_io_ns_delegations = {
+    for delegation in var.osinfra_io_ns_delegations : delegation.name => {
+      managed_zone = delegation.managed_zone
+      name         = "${delegation.name}."
+      rrdatas      = delegation.rrdatas
+      ttl          = delegation.ttl
+    }
+  }
+
+  # Output values
+  output_platform_managed_projects = {
+    for team_key, project in module.google_project_platform_managed :
+    team_key => {
+      cloud_sql   = module.core_helpers.teams[team_key].platform_managed_project.cloud_sql
+      environment = module.core_helpers.env
+      id          = project.id
+      number      = project.number
+      team        = team_key
+    }
+  }
+
+  output_private_dns_zone = {
+    dns_name = local.private_dns_zone_name
+    name     = local.private_dns_name
+  }
+
+  output_service_accounts = {
+    for key, sa in google_service_account.github_actions :
+    key => {
+      email     = sa.email
+      name      = sa.name
+      unique_id = sa.unique_id
+    }
+  }
+
+  output_storage_buckets = {
+    for key, bucket in module.google_storage_bucket :
+    key => {
+      name = bucket.name
+      url  = bucket.url
+    }
+  }
+
+  output_teams = {
+    for team_key, team in module.core_helpers.teams :
+    team_key => merge(team, {
+      google_project = contains(keys(module.google_project_teams), team_key) ? {
+        id = module.google_project_teams[team_key].id
+      } : null
+
+      platform_managed_project = contains(keys(module.google_project_platform_managed), team_key) ? {
+        environment = module.core_helpers.env
+        id          = module.google_project_platform_managed[team_key].id
+        number      = module.google_project_platform_managed[team_key].number
+      } : null
+    })
+  }
+
+  output_workload_identity_pools = {
+    (google_iam_workload_identity_pool.this.workload_identity_pool_id) = {
+      name                      = google_iam_workload_identity_pool.this.name
+      workload_identity_pool_id = google_iam_workload_identity_pool.this.workload_identity_pool_id
+    }
+  }
+
+  output_workload_identity_providers = {
+    (google_iam_workload_identity_pool_provider.this.workload_identity_pool_provider_id) = {
+      name                               = google_iam_workload_identity_pool_provider.this.name
+      workload_identity_pool_provider_id = google_iam_workload_identity_pool_provider.this.workload_identity_pool_provider_id
+    }
+  }
+
+  # Platform-managed project labels
+  platform_managed_project_labels = {
+    for k, v in local.team_labels : k => merge(v, { "project-type" = "platform-managed" })
+  }
+
+  # Platform-managed project owners
+  # Team service accounts that own their platform-managed projects
+  platform_managed_project_owners = {
+    for k, v in local.teams_with_platform_managed_projects : k => v if contains(keys(local.service_accounts), k)
+  }
 
   # Platform-managed project services
   # Constructs the list of services for each platform-managed project, conditionally appending GKE Hub services
@@ -139,6 +276,7 @@ locals {
   service_accounts = {
     for team_key, team in module.core_helpers.teams :
     team_key => {
+      account_id          = "${team_key}-github"
       github_repositories = team.github_repositories
     }
     if team.enable_workflows
@@ -213,6 +351,10 @@ locals {
       registry_writers = [
         "group:${team.identity_groups["registry-writers"].email}"
       ]
+      standard_description   = "Registry for multi-region - US Standard : ${team_key}"
+      standard_repository_id = "${team_key}-standard"
+      virtual_description    = "Registry for multi-region - US Virtual : ${team_key}"
+      virtual_repository_id  = "${team_key}-virtual"
     }
     if contains(keys(team.identity_groups), "registry-readers") &&
     contains(keys(team.identity_groups), "registry-writers") &&
@@ -239,6 +381,14 @@ locals {
     if length(try(team.platform_managed_project.kubernetes_engine_locations, {})) > 0
   }
 
+  # Teams with GKE Hub Host
+  # Subset of teams_with_platform_managed_projects where the team has a GKE Hub host cluster
+  teams_with_gke_hub_host = {
+    for team_key, team in local.teams_with_platform_managed_projects :
+    team_key => team
+    if team.has_gke_hub_host
+  }
+
   # Teams with platform-managed projects
   # Identify teams that need platform-managed projects (GKE clusters, data services, etc.)
   teams_with_platform_managed_projects = {
@@ -251,14 +401,6 @@ locals {
       ])
     })
     if team.platform_managed_project != null
-  }
-
-  # Teams with GKE Hub Host
-  # Subset of teams_with_platform_managed_projects where the team has a GKE Hub host cluster
-  teams_with_gke_hub_host = {
-    for team_key, team in local.teams_with_platform_managed_projects :
-    team_key => team
-    if team.has_gke_hub_host
   }
 
   # Teams with platform-managed Datadog enabled

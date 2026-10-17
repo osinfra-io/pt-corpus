@@ -19,7 +19,7 @@ module "datadog_google_integration" {
 module "datadog_google_integration_datadog_projects" {
   source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=31b789703a19107de72429552d953d86099f499b" # v0.4.11
 
-  for_each                           = var.datadog_enable ? local.google_projects_with_datadog : {}
+  for_each                           = local.datadog_team_projects
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true
   is_security_command_center_enabled = true
@@ -30,7 +30,7 @@ module "datadog_google_integration_datadog_projects" {
 module "datadog_google_integration_platform_managed_projects" {
   source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=31b789703a19107de72429552d953d86099f499b" # v0.4.11
 
-  for_each                           = var.datadog_enable ? local.teams_with_platform_managed_datadog : {}
+  for_each                           = local.datadog_platform_managed_projects
   api_key                            = var.datadog_api_key
   is_cspm_enabled                    = true
   is_security_command_center_enabled = true
@@ -132,7 +132,7 @@ module "google_project_platform_managed" {
   cis_2_2_logging_sink_project_id = module.google_project.id
   deletion_policy                 = "DELETE"
   folder_id                       = module.core_helpers.teams[each.key].environments[local.environment_key]
-  labels                          = merge(local.team_labels[each.key], { "project-type" = "platform-managed" })
+  labels                          = local.platform_managed_project_labels[each.key]
   monthly_budget_amount           = var.platform_managed_project_monthly_budget_amount
   prefix                          = each.key
   services                        = local.platform_managed_project_services[each.key]
@@ -161,7 +161,7 @@ module "google_storage_bucket" {
   for_each = local.opentofu_state_management
   labels   = module.core_helpers.labels
   location = "us"
-  name     = "${each.key}-state-${module.core_helpers.env}"
+  name     = each.value.bucket_name
   project  = module.google_project.id
 }
 
@@ -170,7 +170,7 @@ module "google_storage_bucket" {
 
 resource "google_artifact_registry_repository" "docker_remote" {
   lifecycle {
-    enabled = length(local.teams_with_artifact_registries) > 0
+    enabled = local.enable_docker_remote_registry
   }
 
   description = "Registry for multi-region - US Docker Hub"
@@ -193,24 +193,24 @@ resource "google_artifact_registry_repository" "docker_remote" {
 resource "google_artifact_registry_repository" "docker_standards" {
   for_each = local.teams_with_artifact_registries
 
-  description   = "Registry for multi-region - US Standard : ${each.key}"
+  description   = each.value.standard_description
   format        = "DOCKER"
   labels        = module.core_helpers.labels
   location      = "us"
   project       = module.google_project.id
-  repository_id = "${each.key}-standard"
+  repository_id = each.value.standard_repository_id
 }
 
 resource "google_artifact_registry_repository" "docker_virtuals" {
   for_each = local.teams_with_artifact_registries
 
-  description   = "Registry for multi-region - US Virtual : ${each.key}"
+  description   = each.value.virtual_description
   format        = "DOCKER"
   labels        = module.core_helpers.labels
   location      = "us"
   mode          = "VIRTUAL_REPOSITORY"
   project       = module.google_project.id
-  repository_id = "${each.key}-virtual"
+  repository_id = each.value.virtual_repository_id
 
   virtual_repository_config {
     upstream_policies {
@@ -264,7 +264,7 @@ resource "google_cloud_identity_group_membership" "browsers" {
   for_each = local.non_corpus_service_accounts
 
   create_ignore_already_exists = true
-  group                        = module.core_helpers.teams["pt-corpus"].identity_groups["${lower(local.environment_key)}-browsers"].name
+  group                        = local.browsers_group_name
 
   preferred_member_key {
     id = google_service_account.github_actions[each.key].email
@@ -364,10 +364,10 @@ resource "google_compute_shared_vpc_service_project" "this" {
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/dns_record_set
 
 resource "google_dns_record_set" "osinfra_io_ns_delegations" {
-  for_each = { for delegation in var.osinfra_io_ns_delegations : delegation.name => delegation }
+  for_each = local.osinfra_io_ns_delegations
 
   managed_zone = each.value.managed_zone
-  name         = "${each.value.name}."
+  name         = each.value.name
   project      = module.google_project.id
   rrdatas      = each.value.rrdatas
   ttl          = each.value.ttl
@@ -417,7 +417,7 @@ resource "google_iam_workload_identity_pool_provider" "this" {
   # your existing organization:
   #
   # curl -H "Authorization: token $GITHUB_READ_ORG_TOKEN" https://api.github.com/orgs/osinfra-io
-  attribute_condition = module.core_helpers.env == "sb" ? "assertion.repository_owner_id==\"104685378\"" : "assertion.repository_owner_id==\"104685378\" && (${join(" || ", local.github_actions_ref_conditions)})"
+  attribute_condition = local.github_actions_attribute_condition
 
   # The tokens issued by your external identity provider contain one or more attributes. Some identity providers refer
   # to these attributes as claims. An attribute mapping defines how to derive the value of the Google STS token attribute
@@ -465,7 +465,7 @@ resource "google_kms_crypto_key" "state_encryption" {
 # BUG: https://github.com/hashicorp/terraform-provider-google/issues/7611
 resource "google_kms_crypto_key_iam_member" "cloud_storage_service_account" {
   crypto_key_id = google_kms_crypto_key.state_encryption.id
-  member        = "serviceAccount:service-${module.google_project.number}@gs-project-accounts.iam.gserviceaccount.com"
+  member        = local.cloud_storage_service_account_member
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 }
 
@@ -473,13 +473,13 @@ resource "google_kms_crypto_key_iam_member" "github_actions" {
   for_each = local.opentofu_state_management
 
   crypto_key_id = google_kms_crypto_key.state_encryption.id
-  member        = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  member        = local.github_actions_members[each.key]
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 }
 
 resource "google_kms_crypto_key_iam_member" "logos_state_readers" {
   crypto_key_id = google_kms_crypto_key.state_encryption.id
-  member        = "group:${module.core_helpers.teams["pt-logos"].identity_groups["state-readers"].email}"
+  member        = local.logos_state_readers_member
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 }
 
@@ -505,7 +505,7 @@ resource "google_kms_key_ring" "state_encryption" {
 resource "google_project_iam_member" "container_engine_firewall_management" {
   for_each = module.google_project_platform_managed
 
-  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
+  member  = local.container_engine_robot_members[each.key]
   project = module.google_project.id
   role    = "organizations/163313809793/roles/kubernetes.hostFirewallManagement"
 }
@@ -513,7 +513,7 @@ resource "google_project_iam_member" "container_engine_firewall_management" {
 resource "google_project_iam_member" "container_engine_service_agent_user" {
   for_each = module.google_project_platform_managed
 
-  member  = "serviceAccount:service-${each.value.number}@container-engine-robot.iam.gserviceaccount.com"
+  member  = local.container_engine_robot_members[each.key]
   project = module.google_project.id
   role    = "roles/container.hostServiceAgentUser"
 }
@@ -522,9 +522,9 @@ resource "google_project_iam_member" "container_engine_service_agent_user" {
 # Teams with Kubernetes clusters need to manage DNS records for their Istio gateways.
 
 resource "google_project_iam_member" "dns_records_admins_gke_teams" {
-  for_each = { for k, v in local.teams_with_platform_managed_projects : k => v if contains(keys(local.service_accounts), k) && length(v.platform_managed_project.kubernetes_engine_locations) > 0 }
+  for_each = local.dns_records_admins_gke_teams
 
-  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  member  = local.github_actions_members[each.key]
   project = module.google_project.id
   role    = "organizations/163313809793/roles/dns.recordsAdmin"
 }
@@ -533,20 +533,28 @@ resource "google_project_iam_member" "dns_records_admins_gke_teams" {
 # Grant team service accounts owner role on their google_projects.
 
 resource "google_project_iam_member" "google_project_owners" {
-  for_each = { for k, v in local.google_projects : k => v if contains(keys(local.service_accounts), k) }
+  for_each = local.google_project_owners
 
-  member  = "serviceAccount:${google_service_account.github_actions[each.value.team_key].email}"
+  member  = local.github_actions_members[each.value.team_key]
   project = module.google_project_teams[each.key].id
   role    = "roles/owner"
+}
+
+resource "google_project_iam_member" "multi_cluster_service_agents" {
+  for_each = local.teams_with_gke_hub_host
+
+  member  = local.multi_cluster_service_agent_members[each.key]
+  project = module.google_project.id
+  role    = "roles/multiclusterservicediscovery.serviceAgent"
 }
 
 # Platform-Managed Project Owners
 # Grant team service accounts owner role on their platform-managed projects.
 
 resource "google_project_iam_member" "platform_managed_project_owners" {
-  for_each = { for k, v in local.teams_with_platform_managed_projects : k => v if contains(keys(local.service_accounts), k) }
+  for_each = local.platform_managed_project_owners
 
-  member  = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  member  = local.github_actions_members[each.key]
   project = module.google_project_platform_managed[each.key].id
   role    = "roles/owner"
 }
@@ -558,17 +566,9 @@ resource "google_project_iam_member" "platform_managed_project_owners" {
 resource "google_project_iam_member" "platform_managed_project_pneuma_owners" {
   for_each = local.gke_teams_for_pneuma_access
 
-  member  = "serviceAccount:${google_service_account.github_actions["pt-pneuma"].email}"
+  member  = local.github_actions_members["pt-pneuma"]
   project = module.google_project_platform_managed[each.key].id
   role    = "roles/owner"
-}
-
-resource "google_project_iam_member" "multi_cluster_service_agents" {
-  for_each = local.teams_with_gke_hub_host
-
-  member  = "serviceAccount:${google_project_service_identity.multi_cluster_service_agents[each.key].email}"
-  project = module.google_project.id
-  role    = "roles/multiclusterservicediscovery.serviceAgent"
 }
 
 # Google Project Service Identity Resource
@@ -589,7 +589,7 @@ resource "google_project_service_identity" "multi_cluster_service_agents" {
 resource "google_service_account" "github_actions" {
   for_each = local.service_accounts
 
-  account_id   = "${each.key}-github"
+  account_id   = each.value.account_id
   display_name = "Service account for GitHub Actions"
   project      = module.google_project.id
 }
@@ -600,7 +600,7 @@ resource "google_service_account" "github_actions" {
 resource "google_service_account_iam_member" "github_actions" {
   for_each = local.github_repositories
 
-  member             = "principalSet://iam.googleapis.com/projects/${module.google_project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.this.workload_identity_pool_id}/attribute.repository/osinfra-io/${each.value.repository}"
+  member             = each.value.member
   role               = "roles/iam.workloadIdentityUser"
   service_account_id = google_service_account.github_actions[each.value.name].id
 }
@@ -623,12 +623,12 @@ resource "google_storage_bucket_iam_member" "github_actions" {
   for_each = local.opentofu_state_management
 
   bucket = module.google_storage_bucket[each.key].name
-  member = "serviceAccount:${google_service_account.github_actions[each.key].email}"
+  member = local.github_actions_members[each.key]
   role   = "roles/storage.objectAdmin"
 }
 
 resource "google_storage_bucket_iam_member" "logos_state_readers" {
   bucket = module.google_storage_bucket["pt-logos"].name
-  member = "group:${module.core_helpers.teams["pt-logos"].identity_groups["state-readers"].email}"
+  member = local.logos_state_readers_member
   role   = "roles/storage.objectViewer"
 }

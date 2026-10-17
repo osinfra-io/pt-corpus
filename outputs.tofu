@@ -1,32 +1,19 @@
 # Output Values
 # https://opentofu.org/docs/language/values/outputs
 
-output "platform_managed_projects" {
-  description = "All platform-managed projects created for each team with complete details"
-
-  value = {
-    for team_key, project in module.google_project_platform_managed :
-    team_key => {
-      cloud_sql   = module.core_helpers.teams[team_key].platform_managed_project.cloud_sql
-      environment = module.core_helpers.env
-      id          = project.id
-      number      = project.number
-      team        = team_key
-    }
-  }
-}
-
 output "osinfra_io_dns_zone" {
   description = "The environment public DNS zone (osinfra.io in prod, sb.osinfra.io in sandbox, nonprod.osinfra.io in non-production)"
   value       = module.google_network_osinfra_io_dns
 }
 
+output "platform_managed_projects" {
+  description = "All platform-managed projects created for each team with complete details"
+  value       = local.output_platform_managed_projects
+}
+
 output "private_dns_zone" {
   description = "The environment private DNS zone, for regional deployments to create records against"
-  value = {
-    dns_name = local.private_dns_zone_name
-    name     = local.private_dns_name
-  }
+  value       = local.output_private_dns_zone
 }
 
 output "project_id" {
@@ -46,44 +33,17 @@ output "regional_subnets" {
 
 output "service_accounts" {
   description = "Service accounts created for GitHub Actions"
-  value = {
-    for key, sa in google_service_account.github_actions :
-    key => {
-      email     = sa.email
-      name      = sa.name
-      unique_id = sa.unique_id
-    }
-  }
+  value       = local.output_service_accounts
 }
 
 output "storage_buckets" {
   description = "Storage buckets created for OpenTofu state"
-  value = {
-    for key, bucket in module.google_storage_bucket :
-    key => {
-      name = bucket.name
-      url  = bucket.url
-    }
-  }
+  value       = local.output_storage_buckets
 }
 
 output "teams" {
   description = "All teams data from logos workspaces with platform-managed projects enriched"
-
-  value = {
-    for team_key, team in module.core_helpers.teams :
-    team_key => merge(team, {
-      google_project = contains(keys(module.google_project_teams), team_key) ? {
-        id = module.google_project_teams[team_key].id
-      } : null
-
-      platform_managed_project = contains(keys(module.google_project_platform_managed), team_key) ? {
-        environment = module.core_helpers.env
-        id          = module.google_project_platform_managed[team_key].id
-        number      = module.google_project_platform_managed[team_key].number
-      } : null
-    })
-  }
+  value       = local.output_teams
 }
 
 output "vpc_name" {
@@ -93,20 +53,10 @@ output "vpc_name" {
 
 output "workload_identity_pools" {
   description = "Workload Identity Pools created for external authentication"
-  value = {
-    (google_iam_workload_identity_pool.this.workload_identity_pool_id) = {
-      name                      = google_iam_workload_identity_pool.this.name
-      workload_identity_pool_id = google_iam_workload_identity_pool.this.workload_identity_pool_id
-    }
-  }
+  value       = local.output_workload_identity_pools
 }
 
 output "workload_identity_providers" {
   description = "Workload Identity Pool Providers created for OIDC authentication"
-  value = {
-    (google_iam_workload_identity_pool_provider.this.workload_identity_pool_provider_id) = {
-      name                               = google_iam_workload_identity_pool_provider.this.name
-      workload_identity_pool_provider_id = google_iam_workload_identity_pool_provider.this.workload_identity_pool_provider_id
-    }
-  }
+  value       = local.output_workload_identity_providers
 }

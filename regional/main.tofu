@@ -7,10 +7,10 @@ module "google_cloud_sql" {
   for_each = local.cloud_sql_instances_in_region
 
   database_version    = each.value.instance.database_version
-  deletion_protection = module.core_helpers.env == "prod"
+  deletion_protection = local.cloud_sql_deletion_protection
   host_project_id     = local.main.project_id
   instance_name       = each.value.instance_key
-  labels              = merge(module.core_helpers.labels, { team = each.value.team_key })
+  labels              = each.value.labels
   machine_tier        = each.value.instance.machine_tier
   network             = local.main.vpc_name
   project             = each.value.project_id
@@ -25,7 +25,7 @@ module "google_network_master_subnets" {
 
   for_each                 = local.regional_subnets
   ip_cidr_range            = each.value.master_ipv4_cidr_block
-  name                     = "${each.key}-master"
+  name                     = local.master_subnet_names[each.key]
   network                  = local.main.vpc_name
   private_ip_google_access = true
   project                  = local.main.project_id
@@ -70,7 +70,7 @@ module "google_network_cloud_nat" {
 resource "google_compute_subnetwork_iam_member" "cloud_services" {
   for_each = local.regional_subnets
 
-  member     = "serviceAccount:${each.value.service_project_number}@cloudservices.gserviceaccount.com"
+  member     = local.cloud_services_members[each.key]
   project    = local.main.project_id
   region     = module.core_helpers.region
   role       = "roles/compute.networkUser"
@@ -80,7 +80,7 @@ resource "google_compute_subnetwork_iam_member" "cloud_services" {
 resource "google_compute_subnetwork_iam_member" "cloud_services_master" {
   for_each = local.regional_subnets
 
-  member     = "serviceAccount:${each.value.service_project_number}@cloudservices.gserviceaccount.com"
+  member     = local.cloud_services_members[each.key]
   project    = local.main.project_id
   region     = module.core_helpers.region
   role       = "roles/compute.networkUser"
@@ -90,7 +90,7 @@ resource "google_compute_subnetwork_iam_member" "cloud_services_master" {
 resource "google_compute_subnetwork_iam_member" "container_engine" {
   for_each = local.regional_subnets
 
-  member     = "serviceAccount:service-${each.value.service_project_number}@container-engine-robot.iam.gserviceaccount.com"
+  member     = local.container_engine_members[each.key]
   project    = local.main.project_id
   region     = module.core_helpers.region
   role       = "roles/compute.networkUser"
@@ -100,7 +100,7 @@ resource "google_compute_subnetwork_iam_member" "container_engine" {
 resource "google_compute_subnetwork_iam_member" "container_engine_master" {
   for_each = local.regional_subnets
 
-  member     = "serviceAccount:service-${each.value.service_project_number}@container-engine-robot.iam.gserviceaccount.com"
+  member     = local.container_engine_members[each.key]
   project    = local.main.project_id
   region     = module.core_helpers.region
   role       = "roles/compute.networkUser"
@@ -121,7 +121,7 @@ resource "google_dns_record_set" "cloud_sql" {
   }
 
   managed_zone = local.main.private_dns_zone.name
-  name         = "${each.value.instance_key}.${module.core_helpers.region}.sql.${each.value.team_key}.${local.main.private_dns_zone.dns_name}"
+  name         = each.value.dns_name
   project      = local.main.project_id
   rrdatas      = [module.google_cloud_sql[each.key].private_ip_address]
   ttl          = 300
