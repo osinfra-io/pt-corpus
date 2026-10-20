@@ -26,7 +26,7 @@ permissions:
 jobs:
   main:
     name: "Main"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@f896997141ccd237ba0360aa30feaa0d1ff21e4f # v0.6.0
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5089361dca1f89054e7517a3c4e335d4e0efbd54 # v0.7.0
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
@@ -50,7 +50,7 @@ jobs:
 
   regional:
     name: "Regional: ${{ matrix.region }}"
-    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@f896997141ccd237ba0360aa30feaa0d1ff21e4f # v0.6.0
+    uses: osinfra-io/pt-techne-opentofu-workflows/.github/workflows/plan-and-apply.yml@5089361dca1f89054e7517a3c4e335d4e0efbd54 # v0.7.0
     needs: main
     strategy:
       fail-fast: false
