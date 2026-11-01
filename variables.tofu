@@ -21,7 +21,7 @@ variable "datadog_app_key" {
 
 variable "datadog_enable" {
   default     = false
-  description = "Enable Datadog integration"
+  description = "Platform kill switch for the Datadog integration on all team and platform-managed projects (not exposed to teams)"
   type        = bool
 }
 

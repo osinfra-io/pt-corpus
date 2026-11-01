@@ -24,8 +24,8 @@ locals {
 
   # Datadog integration for_each maps
   # Empty unless Datadog is enabled
-  datadog_platform_managed_projects = var.datadog_enable ? local.teams_with_platform_managed_datadog : {}
-  datadog_team_projects             = var.datadog_enable ? local.google_projects_with_datadog : {}
+  datadog_platform_managed_projects = var.datadog_enable ? local.teams_with_platform_managed_projects : {}
+  datadog_team_projects             = var.datadog_enable ? local.google_projects : {}
 
   # DNS records admin for teams with GKE clusters
   dns_records_admins_gke_teams = {
@@ -94,19 +94,10 @@ locals {
   google_projects = {
     for team_key, team in module.core_helpers.teams :
     team_key => {
-      enable_datadog = team.google_project_enable_datadog
-      services       = team.google_project_services
-      team_key       = team_key
+      services = team.google_project_services
+      team_key = team_key
     }
     if team.enable_workflows && team.enable_google_project
-  }
-
-  # Google Projects with Datadog enabled
-  # Subset of google_projects where the team has opted in to Datadog integration
-  google_projects_with_datadog = {
-    for key, project in local.google_projects :
-    key => project
-    if project.enable_datadog
   }
 
   # Logos state readers group member
@@ -401,14 +392,6 @@ locals {
       ])
     })
     if team.platform_managed_project != null
-  }
-
-  # Teams with platform-managed Datadog enabled
-  # Subset of teams_with_platform_managed_projects where the team has opted in to Datadog integration
-  teams_with_platform_managed_datadog = {
-    for team_key, team in local.teams_with_platform_managed_projects :
-    team_key => team
-    if team.enable_platform_managed_datadog
   }
 
   # VPC Service Projects
