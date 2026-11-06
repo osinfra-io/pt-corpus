@@ -586,6 +586,14 @@ resource "google_project_service_identity" "multi_cluster_service_agents" {
 # Google Service Account Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_service_account
 
+resource "google_service_account" "datadog_image_publisher" {
+  for_each = local.datadog_image_publishers
+
+  account_id   = "arche-datadog-image"
+  display_name = "Datadog Agent image publisher"
+  project      = module.google_project.id
+}
+
 resource "google_service_account" "github_actions" {
   for_each = local.service_accounts
 
@@ -596,6 +604,14 @@ resource "google_service_account" "github_actions" {
 
 # Google Service Account IAM Member Resource
 # https://search.opentofu.org/provider/hashicorp/google/latest/docs/resources/google_service_account_iam#google_service_account_iam_member
+
+resource "google_service_account_iam_member" "datadog_image_publisher" {
+  for_each = local.datadog_image_publishers
+
+  member             = each.value.member
+  role               = "roles/iam.workloadIdentityUser"
+  service_account_id = google_service_account.datadog_image_publisher[each.key].id
+}
 
 resource "google_service_account_iam_member" "github_actions" {
   for_each = local.github_repositories
