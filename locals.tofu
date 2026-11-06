@@ -27,6 +27,13 @@ locals {
   datadog_platform_managed_projects = var.datadog_enable ? local.teams_with_platform_managed_projects : {}
   datadog_team_projects             = var.datadog_enable ? local.google_projects : {}
 
+  # Production image publisher for the Datadog Operator repository
+  datadog_image_publishers = module.core_helpers.env == "prod" ? {
+    "pt-arche-kubernetes-datadog-operator" = {
+      member = "principalSet://iam.googleapis.com/projects/${module.google_project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.this.workload_identity_pool_id}/attribute.repository/osinfra-io/pt-arche-kubernetes-datadog-operator"
+    }
+  } : {}
+
   # DNS records admin for teams with GKE clusters
   dns_records_admins_gke_teams = {
     for k, v in local.teams_with_platform_managed_projects : k => v
@@ -339,9 +346,13 @@ locals {
           if k != team_key && contains(keys(module.core_helpers.teams[k].identity_groups), "registry-readers")
         ] : []
       )
-      registry_writers = [
-        "group:${team.identity_groups["registry-writers"].email}"
-      ]
+      registry_writers = concat(
+        ["group:${team.identity_groups["registry-writers"].email}"],
+        [
+          for sa in values(google_service_account.datadog_image_publisher) : "serviceAccount:${sa.email}"
+          if team_key == "pt-pneuma"
+        ]
+      )
       standard_description   = "Registry for multi-region - US Standard : ${team_key}"
       standard_repository_id = "${team_key}-standard"
       virtual_description    = "Registry for multi-region - US Virtual : ${team_key}"
