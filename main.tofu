@@ -2,7 +2,7 @@
 # https://github.com/osinfra-io/pt-arche-datadog-google-integration
 
 module "datadog_google_integration" {
-  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=58e061d370bc2f6c8b65bf0520b18506f400e5d3" # v0.5.0
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=61b372abd8d8b9282d93c42bfabe1b620e079ddb" # v0.5.1
 
   lifecycle {
     enabled = var.datadog_enable
@@ -17,7 +17,7 @@ module "datadog_google_integration" {
 }
 
 module "datadog_google_integration_datadog_projects" {
-  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=58e061d370bc2f6c8b65bf0520b18506f400e5d3" # v0.5.0
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=61b372abd8d8b9282d93c42bfabe1b620e079ddb" # v0.5.1
 
   for_each                           = local.datadog_team_projects
   api_key                            = var.datadog_api_key
@@ -28,7 +28,7 @@ module "datadog_google_integration_datadog_projects" {
 }
 
 module "datadog_google_integration_platform_managed_projects" {
-  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=58e061d370bc2f6c8b65bf0520b18506f400e5d3" # v0.5.0
+  source = "github.com/osinfra-io/pt-arche-datadog-google-integration?ref=61b372abd8d8b9282d93c42bfabe1b620e079ddb" # v0.5.1
 
   for_each                           = local.datadog_platform_managed_projects
   api_key                            = var.datadog_api_key
