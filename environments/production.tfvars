@@ -1,4 +1,4 @@
-datadog_enable = true
+datadog_enable = false
 
 osinfra_io_ns_delegations = [
   {
