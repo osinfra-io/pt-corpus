@@ -24,8 +24,20 @@ locals {
 
   # Datadog integration for_each maps
   # Empty unless Datadog is enabled
-  datadog_platform_managed_projects = var.datadog_enable ? local.teams_with_platform_managed_projects : {}
-  datadog_team_projects             = var.datadog_enable ? local.google_projects : {}
+  datadog_excluded_teams = module.core_helpers.env == "prod" ? [
+    "pt-pneuma",
+    "pt-techne"
+  ] : []
+  datadog_platform_managed_projects = var.datadog_enable ? {
+    for team_key, team in local.teams_with_platform_managed_projects :
+    team_key => team
+    if !contains(local.datadog_excluded_teams, team_key)
+  } : {}
+  datadog_team_projects = var.datadog_enable ? {
+    for team_key, team in local.google_projects :
+    team_key => team
+    if !contains(local.datadog_excluded_teams, team_key)
+  } : {}
 
   # Production image publisher for the Datadog Operator repository
   datadog_image_publishers = module.core_helpers.env == "prod" ? {
